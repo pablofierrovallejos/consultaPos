@@ -2,13 +2,16 @@ import { Component } from '@angular/core';
 import { ApiService } from '../service/api.service';
 import { DatePipe } from '@angular/common';
 import { Color, ScaleType } from '@swimlane/ngx-charts';
+import {FormGroup,FormControl,Validators,FormArray} from '@angular/forms';
+import {MatToolbarModule} from '@angular/material/toolbar';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.css']
+  styleUrls: ['./home.component.css'],
 })
 export class HomeComponent {
+
 
   dataProductos : any[] = [];
   dataventas : any[] = [];
@@ -30,6 +33,9 @@ export class HomeComponent {
     let ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
     this.llenarDataConsultaVentas(ChangedFormat);
     this.llenarEstadisticaMes(ChangedFormat)
+
+
+
   }
 
   llenarDataProductos(){
@@ -76,9 +82,9 @@ export class HomeComponent {
   }
 
    //Para el grafico de tortas
-   view: [number, number] = [950, 350];
+   view: [number, number] = [1200, 350];
    gradient: boolean = false;
-   showLegend: boolean = true;
+   showLegend: boolean = false;
    showLabels: boolean = true;
    isDoughnut: boolean = true;
    legendPosition: string = 'below';
@@ -102,7 +108,7 @@ export class HomeComponent {
     showYAxisLabel = true;
     yAxisLabel = 'Monto en pesos $';
     showDataLabel = true;
-
+    legend = false;
    onSelect(data): void {
      console.log('Item clicked', JSON.parse(JSON.stringify(data)));
    }
