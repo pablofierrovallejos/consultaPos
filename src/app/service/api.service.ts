@@ -5,10 +5,15 @@ import {Observable} from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
+
 export class ApiService {
+
+
   private urlApi = '/api/productos/listar-productos';
   private urlApiVentas = '/api/productos/listar-ventas';
   private urlApiConsultaVentas = '/api/productos/consultar-ventas/';
+  private urlApiEstadVentasMes = '/api/productos/cons-estadis-mensual/';
+
 
   constructor(private http: HttpClient) { }
 
@@ -22,6 +27,10 @@ export class ApiService {
 
   public getDataConsultaVentas(sfecha): Observable<any>{
     return this.http.get<any>(this.urlApiConsultaVentas + sfecha);
+  }
+
+  public getEstadisticasVentasMes(sfecha): Observable<any>{
+    return this.http.get<any>(this.urlApiEstadVentasMes + sfecha);
   }
 
 }

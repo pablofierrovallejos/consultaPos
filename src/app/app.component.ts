@@ -11,4 +11,8 @@ export class AppComponent {
   incrementar():void{
     this.counter++;
   }
+
+
+
+
 }

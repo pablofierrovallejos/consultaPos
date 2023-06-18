@@ -1,10 +1,31 @@
 <div>
+
+
+
+<h2 align="center">Ventas diarias</h2>
+<div align = 'center'>
+  <ngx-charts-bar-vertical
+    [view]="view"
+    [scheme]="colorScheme"
+    [results]="dataestadistica"
+    [gradient]="gradient"
+    [xAxis]="showXAxis"
+    [yAxis]="showYAxis"
+    [legend]="showLegend"
+    [showXAxisLabel]="showXAxisLabel"
+    [showYAxisLabel]="showYAxisLabel"
+    [xAxisLabel]="xAxisLabel"
+    [yAxisLabel]="yAxisLabel"
+    [showDataLabel]="showDataLabel"
+    (select)="onSelect($event)">
+  </ngx-charts-bar-vertical>
+</div>
   <h2  align="center">Ventas</h2>
 
 
   <div align="center">
     <input type="date" (change)="SendDataonChange($event)" [(ngModel)]="changed" />
-    <button (click)="onClick()">Change</button>
+
   </div>
   <p></p>
   <table border = 1 align = center>
@@ -45,6 +66,19 @@
 
 </div>
 
+<ngx-charts-advanced-pie-chart
+[view]="view"
+[results]="dataestadistica"
+[gradient]="gradient"
+[label]="label"
+[animations]="animations"
+(select)="onSelect($event)"
+(activate)="onActivate($event)"
+(deactivate)="onDeactivate($event)">
+</ngx-charts-advanced-pie-chart>
+
+
+<hr>
 <div>
     <h2 align="center"> Data Productos</h2>
     <table border = 1 align = center>
@@ -59,7 +93,7 @@
           <td>Eliminar</td>
           <td>Editar</td>
         </tr>
-        <tr *ngFor="let item of data">
+        <tr *ngFor="let item of dataProductos">
           <td>  {{item.idproductos}}</td>
           <td>  {{item.nombreproducto}}</td>
           <td>  {{item.precio}}</td>
@@ -73,3 +107,5 @@
     </table>
 
 </div>
+<hr>
+<p></p>
