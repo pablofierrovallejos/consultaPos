@@ -1,0 +1,75 @@
+<div>
+  <h2  align="center">Ventas</h2>
+
+
+  <div align="center">
+    <input type="date" (change)="SendDataonChange($event)" [(ngModel)]="changed" />
+    <button (click)="onClick()">Change</button>
+  </div>
+  <p></p>
+  <table border = 1 align = center>
+    <tr>
+      <td>idventa</td>
+      <td>fechaventa</td>
+      <td>secuencia</td>
+      <td>nroboleta</td>
+      <td>totalarticulos</td>
+      <td>subtotalventa</td>
+      <td>iva</td>
+      <td>totalimporte</td>
+      <td>tipopago</td>
+      <td>comisiontbk</td>
+      <td>comunicacionpos</td>
+      <td>estadotransbank</td>
+      <td>trazastattransbk</td>
+      <td>longmsgtransbank</td>
+    </tr>
+    <tr *ngFor="let item of dataconsultaventas">
+      <td>{{item.idventa}}</td>
+      <td>{{item.fechaventa}}</td>
+      <td>{{item.secuencia}}</td>
+      <td>{{item.nroboleta}}</td>
+      <td>{{item.totalarticulos}}</td>
+      <td>{{item.subtotalventa}}</td>
+      <td>{{item.iva}}</td>
+      <td>{{item.totalimporte}}</td>
+      <td>{{item.tipopago}}</td>
+      <td>{{item.comisiontbk}}</td>
+      <td>{{item.comunicacionpos}}</td>
+      <td>{{item.estadotransbank}}</td>
+      <td>{{item.trazastattransbk}}</td>
+      <td>{{item.longmsgtransbank}}</td>
+    </tr>
+
+  </table>
+
+</div>
+
+<div>
+    <h2 align="center"> Data Productos</h2>
+    <table border = 1 align = center>
+        <tr>
+          <td>Id Producto</td>
+          <td>Nombre Producto</td>
+          <td>precio</td>
+          <td>Fecha Creacion</td>
+          <td>Estado</td>
+          <td>Disponible</td>
+          <td>Posicion</td>
+          <td>Eliminar</td>
+          <td>Editar</td>
+        </tr>
+        <tr *ngFor="let item of data">
+          <td>  {{item.idproductos}}</td>
+          <td>  {{item.nombreproducto}}</td>
+          <td>  {{item.precio}}</td>
+          <td>  {{item.fechacreacion}}</td>
+          <td>  {{item.estado}}</td>
+          <td>  {{item.cantidaddisponible}}</td>
+          <td>  {{item.nroposicion}}</td>
+          <td><button>Eliminar</button></td>
+          <td><button>Editar</button></td>
+        </tr>
+    </table>
+
+</div>

@@ -7,4 +7,8 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'consultaPost';
+  counter = 0;
+  incrementar():void{
+    this.counter++;
+  }
 }
