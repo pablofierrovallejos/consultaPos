@@ -33,35 +33,34 @@ export class HomeComponent {
     let ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
     this.llenarDataConsultaVentas(ChangedFormat);
     this.llenarEstadisticaMes(ChangedFormat)
-
-
-
+    console.log("ngOnInit(): " + ChangedFormat);
   }
 
   llenarDataProductos(){
       this.ApiService.getData().subscribe( dataProductos => {
         this.dataProductos = dataProductos;
-        console.log(this.dataProductos);
       })
+      console.log("llenarDataProductos: " + this.dataProductos);
   }
 
   llenarDataVentas(){
       this.ApiService.getDataVentas().subscribe( dataventas => {
       this.dataventas = dataventas;
-      console.log(this.dataventas);
+      console.log("llenarDataVentas: " + this.dataventas);
     })
   }
 
   llenarDataConsultaVentas(sfecha){
     this.ApiService.getDataConsultaVentas(sfecha).subscribe( dataconsultaventas => {
     this.dataconsultaventas = dataconsultaventas;
-    console.log(this.dataconsultaventas);
+    console.log("llenarDataConsultaVentas: " + sfecha);
     })
   }
 
   llenarEstadisticaMes(sfecha){
     this.ApiService.getEstadisticasVentasMes(sfecha).subscribe( dataestadistica => {
     this.dataestadistica = dataestadistica;
+    console.log("llenarEstadisticaMes: " + sfecha);
     console.log(this.dataestadistica);
     })
   }
@@ -78,11 +77,11 @@ export class HomeComponent {
 
   onClick() {
     this.changeFormat(this.changed);
-    console.log(this.newDate);
+    console.log("onClick: " + this.newDate);
   }
 
    //Para el grafico de tortas
-   view: [number, number] = [1200, 350];
+   view: [number, number] = [1200, 500];
    gradient: boolean = false;
    showLegend: boolean = false;
    showLabels: boolean = true;
@@ -93,7 +92,7 @@ export class HomeComponent {
    colorScheme: Color = {
     name: 'myScheme',
     selectable: true,
-    group: ScaleType.Ordinal,
+    group: ScaleType.Linear,
     domain: ['#3371FF', '#3371FF', '#3371FF'],
   };
 
@@ -109,6 +108,7 @@ export class HomeComponent {
     yAxisLabel = 'Monto en pesos $';
     showDataLabel = true;
     legend = false;
+
    onSelect(data): void {
      console.log('Item clicked', JSON.parse(JSON.stringify(data)));
    }

@@ -67,6 +67,10 @@
             "development": {
               "browserTarget": "consultaPost:build:development",
               "proxyConfig": "src/proxy.conf.json"
+            },
+            "options": {
+              "browserTarget": "consultaPost:build",
+              "proxyConfig": "src/proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"
