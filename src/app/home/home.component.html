@@ -2,9 +2,6 @@
 
 
 <div>
-
-
-
 <h2 align="center">Ventas diarias</h2>
 <div align = 'center'>
   <ngx-charts-bar-vertical
@@ -23,15 +20,12 @@
     (select)="onSelect($event)">
   </ngx-charts-bar-vertical>
 </div>
+
   <h2  align="center">Ventas</h2>
-
-
   <div align="center">
-
-
-
   <input type="date" (change)="SendDataonChange($event)" [(ngModel)]="changed"  />
   </div>
+
   <p></p>
   <table border = 1 align = center>
     <tr>
@@ -72,14 +66,14 @@
 </div>
 
 <ngx-charts-advanced-pie-chart
-[view]="view"
-[results]="dataestadistica"
-[gradient]="gradient"
-[label]="label"
-[animations]="animations"
-(select)="onSelect($event)"
-(activate)="onActivate($event)"
-(deactivate)="onDeactivate($event)">
+  [view]="view"
+  [results]="dataestadistica"
+  [gradient]="gradient"
+  [label]="label"
+  [animations]="animations"
+  (select)="onSelect($event)"
+  (activate)="onActivate($event)"
+  (deactivate)="onDeactivate($event)">
 </ngx-charts-advanced-pie-chart>
 
 
