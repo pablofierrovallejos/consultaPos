@@ -1,12 +1,21 @@
-<mat-toolbar color="primary">Login | Productos | Ventas | </mat-toolbar>
+<head>
+  <link rel="stylesheet" href="home.component.css">
+</head>
+
+<mat-toolbar color="primary">Login | Productos | Ventas |  <button  (click)="iraenergia()"> Energía</button>  | <button  (click)="iraclientes()"> Ir a cliente</button> </mat-toolbar>
+
 
 
 <div>
-<h2 align="center">Ventas diarias</h2>
+<h2 align="center"> 
+    <button (click)="mesAnterior()">(Ver Mes Anterior)</button> 
+    <button (click)="mesSiguiente()">(Ver Mes Siguiente)</button>  
+    Ventas diarias Montos Totales {{nombreMesActual}}</h2> 
+
 <div align = 'center'>
   <ngx-charts-bar-vertical
     [view]="view"
-    [scheme]="colorScheme"
+    [scheme]="colorSchemeBar"
     [results]="dataestadistica"
     [gradient]="gradient"
     [xAxis]="showXAxis"
@@ -20,35 +29,36 @@
     (select)="onSelect($event)">
   </ngx-charts-bar-vertical>
 </div>
-
-  <h2  align="center">Ventas</h2>
+<p>
+  .
+</p>
+  <h2  align="center">Detalle de Ventas {{nombreMesActual}}</h2>
   <div align="center">
   <input type="date" (change)="SendDataonChange($event)" [(ngModel)]="changed"  />
   </div>
 
   <p></p>
-  <table border = 1 align = center>
+  <table class="styled-table" align="center" id="excel-table">
+    <thead class="table-dark">
     <tr>
-      <td>idventa</td>
-      <td>fechaventa</td>
-      <td>secuencia</td>
-      <td>nroboleta</td>
-      <td>totalarticulos</td>
-      <td>subtotalventa</td>
-      <td>iva</td>
-      <td>totalimporte</td>
-      <td>tipopago</td>
-      <td>comisiontbk</td>
-      <td>comunicacionpos</td>
-      <td>estadotransbank</td>
-      <td>trazastattransbk</td>
-      <td>longmsgtransbank</td>
+      <th>#</th>
+      <th>idventa</th><th>fechaventa</th>
+      <!--<th>secuencia</th> -->
+      <!--<th>nroboleta</th> -->
+      <th>totalarticulos</th><th>subtotalventa</th>
+      <th>iva</th><th>totalimporte</th><th>tipopago</th>
+      <th>comisiontbk</th><th>comunicacionpos</th><th>estadotransbank</th>
+      <th>trazastattransbk</th>
+      <!--<th>longmsgtransbank</th> -->
     </tr>
-    <tr *ngFor="let item of dataconsultaventas">
+   </thead>
+   <tbody>
+    <tr *ngFor="let item of dataconsultaventas, index as id">
+      <td>{{ id+1 }}</td>
       <td>{{item.idventa}}</td>
       <td>{{item.fechaventa}}</td>
-      <td>{{item.secuencia}}</td>
-      <td>{{item.nroboleta}}</td>
+     <!-- <td>{{item.secuencia}}</td> -->
+     <!--  <td>{{item.nroboleta}}</td> -->
       <td>{{item.totalarticulos}}</td>
       <td>{{item.subtotalventa}}</td>
       <td>{{item.iva}}</td>
@@ -58,10 +68,23 @@
       <td>{{item.comunicacionpos}}</td>
       <td>{{item.estadotransbank}}</td>
       <td>{{item.trazastattransbk}}</td>
-      <td>{{item.longmsgtransbank}}</td>
+     <!-- <td>{{item.longmsgtransbank}}</td> -->
     </tr>
-
+  </tbody>
   </table>
+ 
+</div>
+
+<div style="width: 60%; margin: 0px auto;">
+   <h2>
+    Total Efectivo: ${{totalMonto-totalTarjeta}}<br>
+    Total Tarjeta: &nbsp; ${{totalTarjeta}}<br>
+    Total:   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;       ${{totalMonto}}<br>
+    Exportar a Exel: <a style="cursor: pointer" (click)="exportexcel()">
+      <mat-icon> cloud_download</mat-icon>
+    </a>
+    
+  </h2>
 
 </div>
 
@@ -77,7 +100,138 @@
 </ngx-charts-advanced-pie-chart>
 
 
-<hr>
+
+
+
+
+
+
+
+
+
+
+<div>
+  <h2 align="center">Ventas Diarias por Producto {{nombreMesActual}}</h2>
+  <div align = 'center'>
+    <ngx-charts-bar-vertical
+      [view]="view"
+      [scheme]="colorSchemeBar"
+      [results]="dataestadisticaProd"
+      [gradient]="gradient"
+      [xAxis]="showXAxis"
+      [yAxis]="showYAxis"
+      [legend]="showLegend"
+      [showXAxisLabel]="showXAxisLabel"
+      [showYAxisLabel]="showYAxisLabel"
+      [xAxisLabel]="xAxisLabel"
+      [yAxisLabel]="y_etiquetaVtaDiariaCant"
+      [showDataLabel]="showDataLabel"
+      (select)="onSelect($event)">
+    </ngx-charts-bar-vertical>
+  </div>
+  <div align="center">
+    <select id="listConcep"  (change)="SendDataonChangeProd($event)" [(ngModel)]="changed" >
+      <option value="{{item.nombreproducto}}"  *ngFor = "let item of dataProductos" >{{item.nombreproducto}}</option>
+    </select>
+    <label>Seleccione producto</label>
+  </div>
+<p>.</p>
+<p>.</p>
+
+<div>
+  <h2 align="center">Ventas Mensuales por Producto {{nombreMesActual}}</h2>
+  <div align = 'center'>
+    <ngx-charts-bar-vertical
+      [view]="view"
+      [scheme]="colorSchemeBar"
+      [results]="dataestadisticaVentasProd"
+      [gradient]="gradient"
+      [xAxis]="showXAxis"
+      [yAxis]="showYAxis"
+      [legend]="showLegend"
+      [showXAxisLabel]="showXAxisLabel"
+      [showYAxisLabel]="showYAxisLabel"
+      [xAxisLabel]="showXAxisLabelVMP"
+      [yAxisLabel]="yAxisLabel"
+      [showDataLabel]="showDataLabel"
+      (select)="onSelect($event)">
+    </ngx-charts-bar-vertical>
+  </div>
+  
+----------------------------------------------
+
+<!-- <hr>
+
+
+
+<div>
+  <h2 align="center">Potencia consumida Watts por día {{ChangedFormat}}</h2>
+  <div align = 'center'>
+    <ngx-charts-bar-vertical
+      [view]="view"
+      [scheme]="colorSchemeMeas"
+      [results]="datameas"
+      [gradient]="false"
+      [xAxis]="showXAxis"
+      [yAxis]="showYAxis"
+      [legend]="showLegend"
+      [showXAxisLabel]="showXAxisLabel"
+      [showYAxisLabel]="true"
+      [xAxisLabel]="xAxisLabelMeas"
+      [yAxisLabel]="yAxisLabelMeas"
+      [showDataLabel]="false"
+      (select)="onSelect($event)">
+    </ngx-charts-bar-vertical>
+  </div>
+
+
+  <div>
+    <h2 align="center">Energía consumida Watts por mes {{nombreMesActual}}</h2>
+    <div align = 'center'>
+      <ngx-charts-bar-vertical
+        [view]="view"
+        [scheme]="colorSchemeMeas"
+        [results]="datameasMes"
+        [gradient]="false"
+        [xAxis]="showXAxis"
+        [yAxis]="showYAxis"
+        [legend]="false"
+        [showXAxisLabel]="showXAxisLabel"
+        [showYAxisLabel]="true"
+        [xAxisLabel]="xAxisLabelMeas"
+        [yAxisLabel]="yAxisLabelMeas"
+        [showDataLabel]="true"
+        (select)="onSelect($event)">
+      </ngx-charts-bar-vertical>
+  </div>
+
+  
+
+  <div>
+    <h2 align="center">Potencia consumida vs Generada Watts por día {{ChangedFormat}}</h2>
+    <div align = 'center'>
+    <ngx-charts-bar-vertical-2d
+      [view]="view"
+      [scheme]="colorScheme3"
+      [results]="datamultiMeas"
+      [gradient]="gradient"
+      [xAxis]="showXAxis2"
+      [yAxis]="showYAxis2"
+      [legend]="false"
+      [showXAxisLabel]="showXAxisLabel2"
+      [showYAxisLabel]="showYAxisLabel2"
+      [showDataLabel]=true
+      [xAxisLabel]="xAxisLabel2"
+      [yAxisLabel]="yAxisLabel2"
+      [legendTitle]="legendTitle2"
+      (select)="onSelect($event)"
+      (activate)="onActivate($event)"
+      (deactivate)="onDeactivate($event)">
+    </ngx-charts-bar-vertical-2d>
+  </div>  
+
+
+
 <div>
     <h2 align="center"> Data Productos</h2>
     <table border = 1 align = center>
@@ -107,4 +261,6 @@
 
 </div>
 <hr>
-<p></p>
+<p></p> -->
+
+

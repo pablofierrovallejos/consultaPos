@@ -1,0 +1,72 @@
+<head>
+    <link rel="stylesheet" href="./energia.component.css">
+  </head>
+  
+
+  <div>
+    <h2 align="center">Potencia consumida Watts por día {{ChangedFormat}}</h2>
+    <div align = 'center'>
+      <ngx-charts-bar-vertical
+        [view]="view"
+        [scheme]="colorSchemeMeas"
+        [results]="datameas"
+        [gradient]="false"
+        [xAxis]="showXAxis"
+        [yAxis]="showYAxis"
+        [legend]="showLegend"
+        [showXAxisLabel]="showXAxisLabel"
+        [showYAxisLabel]="true"
+        [xAxisLabel]="xAxisLabelMeas"
+        [yAxisLabel]="yAxisLabelMeas"
+        [showDataLabel]="false"
+        (select)="onSelect($event)">
+      </ngx-charts-bar-vertical>
+    </div>
+  
+  
+    <div>
+      <h2 align="center">Energía consumida Watts por mes {{nombreMesActual}}</h2>
+      <div align = 'center'>
+        <ngx-charts-bar-vertical
+          [view]="view"
+          [scheme]="colorSchemeMeas"
+          [results]="datameasMes"
+          [gradient]="false"
+          [xAxis]="showXAxis"
+          [yAxis]="showYAxis"
+          [legend]="false"
+          [showXAxisLabel]="showXAxisLabel"
+          [showYAxisLabel]="true"
+          [xAxisLabel]="xAxisLabelMeas"
+          [yAxisLabel]="yAxisLabelMeas"
+          [showDataLabel]="true"
+          (select)="onSelect($event)">
+        </ngx-charts-bar-vertical>
+    </div>
+  
+    
+  
+    <div>
+      <h2 align="center">Potencia consumida vs Generada Watts por día {{ChangedFormat}}</h2>
+      <div align = 'center'>
+      <ngx-charts-bar-vertical-2d
+        [view]="view"
+        [scheme]="colorScheme3"
+        [results]="datamultiMeas"
+        [gradient]="gradient"
+        [xAxis]="showXAxis2"
+        [yAxis]="showYAxis2"
+        [legend]="false"
+        [showXAxisLabel]="showXAxisLabel2"
+        [showYAxisLabel]="showYAxisLabel2"
+        [showDataLabel]=true
+        [xAxisLabel]="xAxisLabel2"
+        [yAxisLabel]="yAxisLabel2"
+        [legendTitle]="legendTitle2"
+        (select)="onSelect($event)"
+        (activate)="onActivate($event)"
+        (deactivate)="onDeactivate($event)">
+      </ngx-charts-bar-vertical-2d>
+    </div>  
+  
+  

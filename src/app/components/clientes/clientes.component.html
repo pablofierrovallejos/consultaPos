@@ -1,0 +1,44 @@
+
+
+<h2  align="center">Listado Imagenes Cliente</h2>
+<div align="center">
+</div>
+
+<p></p>
+<table border=1 class="styled-table" align="center" id="excel-table">
+  <thead class="table-dark">
+  <tr>
+    <th>#</th>
+    <th>idImagen</th>
+    <th>IdVenta</th>
+    <th>Imagen</th>
+    <th>Ruta</th>
+  </tr>
+ </thead>
+ <tbody>
+  <tr *ngFor="let item of dataImagenClientes, index as id">
+    <td>{{ id+1 }}</td>
+    <td>{{item.idimagen}}</td>
+    <td>{{item.idventa}}</td>
+    <td><img id='miImagen' src="{{'data:image/jpg;base64,' + item.imagen}}" /></td>
+    <td>{{item.ruta}}</td>
+
+    
+
+  </tr>
+</tbody>
+</table>
+
+<style>
+#miImagen{
+    transform: rotate(-180deg);
+}
+.styled-table { border-collapse: collapse; margin: auto; font-size: 1em; font-family: sans-serif; min-width: 450px; box-shadow: 0 0 20px rgba(0, 0, 0, 0.15); }
+
+.styled-table thead tr { background-color: #980081; color: #ffffff; text-align: middle; }
+
+.styled-table th, .styled-table td { padding: 12px 15px; }
+
+.styled-table tbody tr { border-bottom: 1px solid #dddddd; } .styled-table tbody tr:nth-of-type(even) { background-color: #f3f3f3; } .styled-table tbody tr:last-of-type { border-bottom: 2px solid #009879; }
+
+</style>

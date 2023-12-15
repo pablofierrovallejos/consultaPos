@@ -27,7 +27,15 @@ export class ApiService {
   private urlApiVentas = 'http://microserver:8090/api/productos/listar-ventas';
   private urlApiConsultaVentas = 'http://microserver:8090/api/productos/consultar-ventas/';
   private urlApiEstadVentasMes = 'http://microserver:8090/api/productos/cons-estadis-mensual/';
+  private urlApiEstadVentasMesProd = 'http://microserver:8090/api/productos/cons-estadis-mensual-por-prod/';
+  private urlApiEstadVentasMesProd2 = 'http://microserver:8090/api/productos/cons-estadis-mensual-masvendido-monto/';
+  
 
+  private urlconsultaMeas = 'http://microserver:8090/api/energia/consultar-estadistica/Meas1/';
+  private urlconsultaMeasMes = 'http://microserver:8090/api/energia/consultar-consumo-mes/Meas1/';
+
+  private urlconsultMultiMeasMes = 'http://microserver:8090/api/energia/consultar-consumo-mes2/Meas1/';
+  private urlconsultaImagenCliente = 'http://microserver:8090/api/productos/consultar-imagencli';
 
   constructor(private http: HttpClient) { }
 
@@ -46,5 +54,31 @@ export class ApiService {
   public getEstadisticasVentasMes(sfecha): Observable<any>{
     return this.http.get<any>(this.urlApiEstadVentasMes + sfecha);
   }
+
+  public getEstadisticasVentasMesProd(sfecha, sproducto): Observable<any>{
+    return this.http.get<any>(this.urlApiEstadVentasMesProd + sfecha + '/' + sproducto);
+  }
+
+  public getEstadisticasVentasMesProd2(sfecha): Observable<any>{
+    return this.http.get<any>(this.urlApiEstadVentasMesProd2 + sfecha );
+  }
+
+  public getDataConsultaMeas(sfecha): Observable<any>{
+    return this.http.get<any>(this.urlconsultaMeas + sfecha);
+  }
+
+  public getDataConsultaMeasMes(sfecha): Observable<any>{
+    return this.http.get<any>(this.urlconsultaMeasMes + sfecha);
+  }
+
+  public getDataConsultaMultiMeasMes(sfecha): Observable<any>{
+    return this.http.get<any>(this.urlconsultMultiMeasMes + sfecha);
+  }
+
+  public getDataConsultaImagenCliente(): Observable<any>{
+    return this.http.get<any>(this.urlconsultaImagenCliente);
+  }
+
+
 
 }
