@@ -26,7 +26,8 @@ export class HomeComponent {
   datamultiMeas: any[] = [];
 
   changed: Date = new Date();
-  ChangedFormat='';
+  ChangedFormat='';   
+  ChangedFormat2='';
   nombreMesActual = ''; 
 
   changedFecha: Date = new Date();
@@ -52,6 +53,7 @@ export class HomeComponent {
   
   ngOnInit(): void{
     this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
+    this.ChangedFormat2  = this.pipe.transform(this.changed, 'dd/MM/YYYY') ?? '';
     this.nombreMesActual = this.obtenerNombreMes(this.ChangedFormat.substring(3,5));
 
     this.llenarDataVentas();
@@ -60,9 +62,7 @@ export class HomeComponent {
     this.llenarDataConsultaVentas(this.ChangedFormat);
     this.llenarEstadisticaMes(this.ChangedFormat);
     this.llenarEstadisticaMesProd(this.ChangedFormat,'Soft Simple');
-   // this.llenarDataConsultaMeas(this.ChangedFormat); 
-   // this.llenarDataConsultaMeasMes(this.ChangedFormat);
-   // this.llenarDataMeasMulti(this.ChangedFormat);
+
     this.llenarEstadisticaVentasMesProd(this.ChangedFormat);
     console.log("ngOnInit(): " + this.ChangedFormat);
   }
@@ -72,6 +72,12 @@ export class HomeComponent {
   }
   iraenergia(){
     this.router.navigate(['/energia']);
+  }
+  iraproductos(){
+    this.router.navigate(['/productos']);
+  }
+  iraventas(){
+    this.router.navigate(['/home']);
   }
 
   exportexcel(): void 
@@ -89,6 +95,18 @@ export class HomeComponent {
     
   }
 
+  diaAnterior(){
+    this.changed.setDate(this.changed.getDate() - 1);
+    this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
+    this.ngOnInit()  //llamamos a la funcion ngOnInit para que se actualice la pagina
+  }
+  diaSiguiente(){
+    this.changed.setDate(this.changed.getDate() + 1);
+    this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
+    this.ngOnInit()  //llamamos a la funcion ngOnInit para que se actualice la pagina
+    console.log('this.changed ' + this.changed)
+    console.log('this.changed.getDate() ' + this.changed.getDate())
+  }
 
   mesAnterior(){
     this.changed.setMonth(this.changed.getMonth() - 1);
@@ -141,9 +159,9 @@ export class HomeComponent {
       }
     }, 0);
 
-    //console.log("Total: "+  this.totalMonto + 'largo:' + this.dataconsultaventas.length)
+    console.log("Total: "+  this.totalMonto + 'largo:' + this.dataconsultaventas.length)
     //console.log('Json' + JSON.stringify(this.dataconsultaventas));
-    //console.log("llenarDataConsultaVentas: " + sfecha);
+    console.log("llenarDataConsultaVentas: " + sfecha);
     })
   }
 
@@ -231,8 +249,6 @@ export class HomeComponent {
   }
 
   SendDataonChangeProd(event: any) {
-    //console.log('SendDataonChangeProd: ' + event.target.value);
-  
     let ChangedFormat = this.pipe.transform(this.changedFecha, 'YY-MM-dd') ?? '';
     this.llenarEstadisticaMesProd(ChangedFormat, event.target.value);
   }
@@ -242,6 +258,11 @@ export class HomeComponent {
     let ChangedFormat = this.pipe.transform(this.changed, 'dd/MM/YYYY') ?? '';
     this.newDate = ChangedFormat;
   }
+  changeFormat2(changed){
+    let ChangedFormat2 = this.pipe.transform(this.changed, 'dd/MM/YYYY') ?? '';
+    this.newDate = ChangedFormat2;
+  }
+
 
   onClick() {
     this.changeFormat(this.changed);

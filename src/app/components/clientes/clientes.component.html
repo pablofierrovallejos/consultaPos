@@ -1,10 +1,20 @@
 
+<mat-toolbar color="primary">Login |   <button  (click)="iraproductos()"> Productos </button>   | <button  (click)="iraventas()"> Ventas </button> |  <button  (click)="iraenergia()"> Energía</button>  | <button  (click)="iraclientes()"> Ir a cliente</button> </mat-toolbar>
 
 <h2  align="center">Listado Imagenes Cliente</h2>
 <div align="center">
 </div>
 
 <p></p>
+<h2  align="center">  <button (click)="diaAnterior()">(Día Anterior)</button>  
+  <button (click)="diaSiguiente()">(Día Siguiente)</button> 
+  Imagenes Clientes por id  Ventas {{nombreMesActual}} {{ChangedFormat2}}
+</h2>
+<div align="center">
+<input type="date" (change)="SendDataonChange($event)" [(ngModel)]="changed"  />
+</div>
+
+
 <table border=1 class="styled-table" align="center" id="excel-table">
   <thead class="table-dark">
   <tr>
@@ -28,7 +38,10 @@
   </tr>
 </tbody>
 </table>
-
+<h2  align="center">  <button (click)="diaAnterior()">(Día Anterior)</button>  
+  <button (click)="diaSiguiente()">(Día Siguiente)</button> 
+  Imagenes Clientes por id  Ventas {{nombreMesActual}} {{ChangedFormat2}}
+</h2>
 <style>
 #miImagen{
     transform: rotate(-180deg);

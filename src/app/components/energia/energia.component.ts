@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Color, ScaleType } from '@swimlane/ngx-charts';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../service/api.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-energia',
@@ -24,7 +25,7 @@ export class EnergiaComponent {
   
   
 
-  constructor(private ApiService: ApiService) {
+  constructor(private ApiService: ApiService, private router: Router) {
   }
 
   ngOnInit(): void{
@@ -120,4 +121,18 @@ export class EnergiaComponent {
       //console.log("llenarDataMeasMulti: " + this.datamultiMeas);
     }
 
-}
+    iraclientes(){
+      this.router.navigate(['/clientes']);
+    }
+    iraenergia(){
+      this.router.navigate(['/energia']);
+    }
+    iraproductos(){
+      this.router.navigate(['/productos']);
+    }
+
+    iraventas(){
+      this.router.navigate(['/home']);
+    }
+
+  }

@@ -2,10 +2,8 @@
   <link rel="stylesheet" href="home.component.css">
 </head>
 
-<mat-toolbar color="primary">Login | Productos | Ventas |  <button  (click)="iraenergia()"> Energía</button>  | <button  (click)="iraclientes()"> Ir a cliente</button> </mat-toolbar>
-
-
-
+<mat-toolbar color="primary">Login |   <button  (click)="iraproductos()"> Productos </button>   | <button  (click)="iraventas()"> Ventas </button> |  <button  (click)="iraenergia()"> Energía</button>  | <button  (click)="iraclientes()"> Ir a cliente</button> </mat-toolbar>
+  
 <div>
 <h2 align="center"> 
     <button (click)="mesAnterior()">(Ver Mes Anterior)</button> 
@@ -32,7 +30,9 @@
 <p>
   .
 </p>
-  <h2  align="center">Detalle de Ventas {{nombreMesActual}}</h2>
+  <h2  align="center">  <button (click)="diaAnterior()">(Día Anterior)</button>  
+                        <button (click)="diaSiguiente()">(Día Siguiente)</button> 
+                        Detalle de Ventas {{nombreMesActual}} {{ChangedFormat2}}</h2>
   <div align="center">
   <input type="date" (change)="SendDataonChange($event)" [(ngModel)]="changed"  />
   </div>
@@ -83,9 +83,7 @@
     Exportar a Exel: <a style="cursor: pointer" (click)="exportexcel()">
       <mat-icon> cloud_download</mat-icon>
     </a>
-    
   </h2>
-
 </div>
 
 <ngx-charts-advanced-pie-chart
@@ -98,15 +96,6 @@
   (activate)="onActivate($event)"
   (deactivate)="onDeactivate($event)">
 </ngx-charts-advanced-pie-chart>
-
-
-
-
-
-
-
-
-
 
 
 
@@ -158,109 +147,5 @@
     </ngx-charts-bar-vertical>
   </div>
   
-----------------------------------------------
-
-<!-- <hr>
-
-
-
-<div>
-  <h2 align="center">Potencia consumida Watts por día {{ChangedFormat}}</h2>
-  <div align = 'center'>
-    <ngx-charts-bar-vertical
-      [view]="view"
-      [scheme]="colorSchemeMeas"
-      [results]="datameas"
-      [gradient]="false"
-      [xAxis]="showXAxis"
-      [yAxis]="showYAxis"
-      [legend]="showLegend"
-      [showXAxisLabel]="showXAxisLabel"
-      [showYAxisLabel]="true"
-      [xAxisLabel]="xAxisLabelMeas"
-      [yAxisLabel]="yAxisLabelMeas"
-      [showDataLabel]="false"
-      (select)="onSelect($event)">
-    </ngx-charts-bar-vertical>
-  </div>
-
-
-  <div>
-    <h2 align="center">Energía consumida Watts por mes {{nombreMesActual}}</h2>
-    <div align = 'center'>
-      <ngx-charts-bar-vertical
-        [view]="view"
-        [scheme]="colorSchemeMeas"
-        [results]="datameasMes"
-        [gradient]="false"
-        [xAxis]="showXAxis"
-        [yAxis]="showYAxis"
-        [legend]="false"
-        [showXAxisLabel]="showXAxisLabel"
-        [showYAxisLabel]="true"
-        [xAxisLabel]="xAxisLabelMeas"
-        [yAxisLabel]="yAxisLabelMeas"
-        [showDataLabel]="true"
-        (select)="onSelect($event)">
-      </ngx-charts-bar-vertical>
-  </div>
-
-  
-
-  <div>
-    <h2 align="center">Potencia consumida vs Generada Watts por día {{ChangedFormat}}</h2>
-    <div align = 'center'>
-    <ngx-charts-bar-vertical-2d
-      [view]="view"
-      [scheme]="colorScheme3"
-      [results]="datamultiMeas"
-      [gradient]="gradient"
-      [xAxis]="showXAxis2"
-      [yAxis]="showYAxis2"
-      [legend]="false"
-      [showXAxisLabel]="showXAxisLabel2"
-      [showYAxisLabel]="showYAxisLabel2"
-      [showDataLabel]=true
-      [xAxisLabel]="xAxisLabel2"
-      [yAxisLabel]="yAxisLabel2"
-      [legendTitle]="legendTitle2"
-      (select)="onSelect($event)"
-      (activate)="onActivate($event)"
-      (deactivate)="onDeactivate($event)">
-    </ngx-charts-bar-vertical-2d>
-  </div>  
-
-
-
-<div>
-    <h2 align="center"> Data Productos</h2>
-    <table border = 1 align = center>
-        <tr>
-          <td>Id Producto</td>
-          <td>Nombre Producto</td>
-          <td>precio</td>
-          <td>Fecha Creacion</td>
-          <td>Estado</td>
-          <td>Disponible</td>
-          <td>Posicion</td>
-          <td>Eliminar</td>
-          <td>Editar</td>
-        </tr>
-        <tr *ngFor="let item of dataProductos">
-          <td>  {{item.idproductos}}</td>
-          <td>  {{item.nombreproducto}}</td>
-          <td>  {{item.precio}}</td>
-          <td>  {{item.fechacreacion}}</td>
-          <td>  {{item.estado}}</td>
-          <td>  {{item.cantidaddisponible}}</td>
-          <td>  {{item.nroposicion}}</td>
-          <td><button>Eliminar</button></td>
-          <td><button>Editar</button></td>
-        </tr>
-    </table>
-
-</div>
-<hr>
-<p></p> -->
 
 

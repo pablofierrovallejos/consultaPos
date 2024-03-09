@@ -79,6 +79,9 @@ export class ApiService {
     return this.http.get<any>(this.urlconsultaImagenCliente);
   }
 
+  public getDataConsultaImagenCliente2(sfecha): Observable<any>{
+    return this.http.get<any>(this.urlconsultaImagenCliente + "/" + sfecha);
+  }
 
 
 }
