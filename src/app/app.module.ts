@@ -14,6 +14,7 @@ import { EnergiaComponent } from './components/energia/energia.component';
 import { ProductosComponent } from './components/productos/productos.component';
 import { SpinnerComponent } from './spinner/spinner.component'; // Add this import
 import { LoadingInterceptor } from './loading.interceptor';
+import { IngresoventaComponent } from './components/ingresoventa/ingresoventa.component';
 
 
 @NgModule({
@@ -23,7 +24,8 @@ import { LoadingInterceptor } from './loading.interceptor';
     ClientesComponent,
     EnergiaComponent,
     ProductosComponent,
-    SpinnerComponent
+    SpinnerComponent,
+    IngresoventaComponent
   ],
   imports: [
     BrowserModule,

@@ -80,6 +80,10 @@ export class HomeComponent {
     this.router.navigate(['/home']);
   }
 
+  ingresarventa(){
+    this.router.navigate(['/ingresoventa']);
+  }
+
   exportexcel(): void 
   {
      /* table id is passed over here */   

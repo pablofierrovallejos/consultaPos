@@ -1,0 +1,17 @@
+<html>
+<head>
+<script type="text/javascript">
+  function onKeyUp(event) {
+    var keycode = event.keyCode;
+    if(keycode == '13'){
+      alert('You pressed a "enter" key in textbox'); 
+    }
+  }
+</script>
+</head>
+
+<body>
+  <input onkeyup="onKeyUp(event)" type="text" id = "txtConvBusFch" class="form-control datepicker" placeholder="Desde Fecha">
+</body>
+</html>
+
