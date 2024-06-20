@@ -23,19 +23,21 @@ import {Observable} from 'rxjs';
 
 export class ApiService {
 
-  private urlApi = 'http://microserver:8090/api/productos/listar-productos';
-  private urlApiVentas = 'http://microserver:8090/api/productos/listar-ventas';
-  private urlApiConsultaVentas = 'http://microserver:8090/api/productos/consultar-ventas/';
-  private urlApiEstadVentasMes = 'http://microserver:8090/api/productos/cons-estadis-mensual/';
-  private urlApiEstadVentasMesProd = 'http://microserver:8090/api/productos/cons-estadis-mensual-por-prod/';
-  private urlApiEstadVentasMesProd2 = 'http://microserver:8090/api/productos/cons-estadis-mensual-masvendido-monto/';
+  // private baseUrl = "http://microserver:8090"
+  private baseUrl = "http://192.168.2.222:30600"
+  private urlApi = this.baseUrl + '/api/productos/listar-productos';
+  private urlApiVentas = this.baseUrl +'/api/productos/listar-ventas';
+  private urlApiConsultaVentas = this.baseUrl +'/api/productos/consultar-ventas/';
+  private urlApiEstadVentasMes = this.baseUrl +'/api/productos/cons-estadis-mensual/';
+  private urlApiEstadVentasMesProd = this.baseUrl +'/api/productos/cons-estadis-mensual-por-prod/';
+  private urlApiEstadVentasMesProd2 = this.baseUrl +'/api/productos/cons-estadis-mensual-masvendido-monto/';
   
 
-  private urlconsultaMeas = 'http://microserver:8090/api/energia/consultar-estadistica/Meas1/';
-  private urlconsultaMeasMes = 'http://microserver:8090/api/energia/consultar-consumo-mes/Meas1/';
+  private urlconsultaMeas = this.baseUrl +'/api/energia/consultar-estadistica/Meas1/';
+  private urlconsultaMeasMes = this.baseUrl +'/api/energia/consultar-consumo-mes/Meas1/';
 
-  private urlconsultMultiMeasMes = 'http://microserver:8090/api/energia/consultar-consumo-mes2/Meas1/';
-  private urlconsultaImagenCliente = 'http://microserver:8090/api/productos/consultar-imagencli';
+  private urlconsultMultiMeasMes = this.baseUrl +'/api/energia/consultar-consumo-mes2/Meas1/';
+  private urlconsultaImagenCliente = this.baseUrl +'/api/productos/consultar-imagencli';
 
   constructor(private http: HttpClient) { }
 
