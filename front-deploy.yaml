@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
       - image: 96552333aa/servicio-ng-front-vtas:v2
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         name: servicio-ng-front-vtas
         ports:
         - containerPort: 80
