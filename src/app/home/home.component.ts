@@ -14,6 +14,8 @@ import { Router } from '@angular/router';
 })
 export class HomeComponent {
 
+
+
   dataProductos : any[] = [];
   dataventas : any[] = [];
   dataconsultaventas : any[] = [];
@@ -79,6 +81,11 @@ export class HomeComponent {
   iraventas(){
     this.router.navigate(['/home']);
   }
+
+  iragastos() {
+    this.router.navigate(['/gastos']);
+  }
+
 
   ingresarventa(){
     this.router.navigate(['/ingresoventa']);
