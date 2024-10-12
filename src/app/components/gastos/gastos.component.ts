@@ -9,6 +9,19 @@ import { DatePipe } from '@angular/common';
   styleUrls: ['./gastos.component.css']
 })
 export class GastosComponent {
+ingresargastos() {
+throw new Error('Method not implemented.');
+}
+iragastos() {
+throw new Error('Method not implemented.');
+}
+nombreMesActual: any;
+mesSiguiente() {
+throw new Error('Method not implemented.');
+}
+mesAnterior() {
+throw new Error('Method not implemented.');
+}
 
   constructor(private ApiService: ApiService,private router: Router){
   }
