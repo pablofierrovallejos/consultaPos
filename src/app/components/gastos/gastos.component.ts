@@ -11,6 +11,12 @@ import { DatePipe } from '@angular/common';
 export class GastosComponent {
 
 dataconsultagastos: any[] = [];
+pipe = new DatePipe('en-US');
+
+changed: Date = new Date();
+ChangedFormat='';   
+ChangedFormat2='';
+nombreMesActual: any;
 
 ingresargastos() {
 throw new Error('Method not implemented.');
@@ -18,7 +24,7 @@ throw new Error('Method not implemented.');
 iragastos() {
 throw new Error('Method not implemented.');
 }
-nombreMesActual: any;
+
 mesSiguiente() {
 throw new Error('Method not implemented.');
 }
@@ -27,6 +33,20 @@ throw new Error('Method not implemented.');
 }
 
   constructor(private ApiService: ApiService,private router: Router){}
+
+  ngOnInit(): void{
+    this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
+    this.ChangedFormat2  = this.pipe.transform(this.changed, 'dd/MM/YYYY') ?? '';
+   // this.nombreMesActual = this.obtenerNombreMes(this.ChangedFormat.substring(3,5));
+
+
+   
+    this.llenarDataConsultaCostos(this.ChangedFormat);
+
+    console.log("ngOnInit(): " + this.ChangedFormat);
+  }
+
+
 
   iraclientes(){
     this.router.navigate(['/clientes']);
@@ -41,10 +61,10 @@ throw new Error('Method not implemented.');
     this.router.navigate(['/home']);
   }
 
-  llenarDataConsultaVentas(sfecha){
+  llenarDataConsultaCostos(sfecha){
     this.ApiService.getDataConsultaCostos(sfecha).subscribe( dataconsultagastos => {
     this.dataconsultagastos = dataconsultagastos;
-    console.log("llenarDataConsultaVentas: " + sfecha);
+    console.log("llenarDataConsultaGastos: " + sfecha);
     })
   }
 

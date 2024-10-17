@@ -37,17 +37,13 @@
    <tbody>
     <tr *ngFor="let item of dataconsultagastos, index as id">
       <td>{{ id+1 }}</td>
-      <td>{{item.idventa}}</td>
-      <td>{{item.fechaventa}}</td>
-      <td>{{item.totalarticulos}}</td>
-      <td>{{item.subtotalventa}}</td>
-      <td>{{item.iva}}</td>
-      <td>{{item.totalimporte}}</td>
-      <td>{{item.tipopago}}</td>
-      <td>{{item.comisiontbk}}</td>
-      <td>{{item.comunicacionpos}}</td>
-      <td>{{item.estadotransbank}}</td>
-      <td>{{item.trazastattransbk}}</td>
+      <td>{{item.idcostos}}</td>
+      <td>{{item.fecha}}</td>
+      <td>{{item.item}}</td>
+      <td>{{item.cantidad}}</td>
+      <td>{{item.montototal}}</td>
+      <td>{{item.descripcion}}</td>
+    
     </tr>
   </tbody>
   </table>
