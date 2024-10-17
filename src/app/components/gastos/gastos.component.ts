@@ -9,6 +9,9 @@ import { DatePipe } from '@angular/common';
   styleUrls: ['./gastos.component.css']
 })
 export class GastosComponent {
+
+dataconsultagastos: any[] = [];
+
 ingresargastos() {
 throw new Error('Method not implemented.');
 }
@@ -23,9 +26,7 @@ mesAnterior() {
 throw new Error('Method not implemented.');
 }
 
-  constructor(private ApiService: ApiService,private router: Router){
-  }
-
+  constructor(private ApiService: ApiService,private router: Router){}
 
   iraclientes(){
     this.router.navigate(['/clientes']);
@@ -39,4 +40,12 @@ throw new Error('Method not implemented.');
   iraventas(){
     this.router.navigate(['/home']);
   }
+
+  llenarDataConsultaVentas(sfecha){
+    this.ApiService.getDataConsultaCostos(sfecha).subscribe( dataconsultagastos => {
+    this.dataconsultagastos = dataconsultagastos;
+    console.log("llenarDataConsultaVentas: " + sfecha);
+    })
+  }
+
 }

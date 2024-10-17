@@ -44,6 +44,8 @@ export class ApiService {
   private urlconsultMultiMeasMes = this.baseUrl +'/api/energia/consultar-consumo-mes2/Meas1/';
   private urlconsultaImagenCliente = this.baseUrl +'/api/productos/consultar-imagencli';
 
+  private urlconsultaCostos = this.baseUrl +'/api/productos/consultar-costos/';
+
   constructor(private http: HttpClient) { }
 
   public getData(): Observable<any>{
@@ -52,6 +54,10 @@ export class ApiService {
 
   public getDataVentas(): Observable<any>{
     return this.http.get<any>(this.urlApiVentas);
+  }
+
+  public getDataConsultaCostos(sfecha): Observable<any>{
+    return this.http.get<any>(this.urlconsultaCostos + sfecha);
   }
 
   public getDataConsultaVentas(sfecha): Observable<any>{

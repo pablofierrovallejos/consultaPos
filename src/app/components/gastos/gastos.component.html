@@ -1,3 +1,7 @@
+<head>
+    <link rel="stylesheet" href="gastos.component.css">
+</head>
+
 <mat-toolbar color="primary">Login |   
     <button  (click)="iraproductos()"> Productos </button>   | 
     <button  (click)="iraventas()"> Ventas </button> |   
@@ -14,3 +18,36 @@
     Gastos diarios Montos Totales {{nombreMesActual}} 
     <button  (click)="ingresargastos()"> Ingresar Gastos </button>
 </h2> 
+
+
+
+<p></p>
+  <table class="styled-table" align="center" id="excel-table">
+    <thead class="table-dark">
+    <tr>
+      <th>#</th>
+      <th>idcostos</th>
+      <th>Fecha compra</th>
+      <th>Item</th>
+      <th>Cantidad</th>
+      <th>Monto Totales </th>
+      <th>Descripción</th>
+    </tr>
+   </thead>
+   <tbody>
+    <tr *ngFor="let item of dataconsultagastos, index as id">
+      <td>{{ id+1 }}</td>
+      <td>{{item.idventa}}</td>
+      <td>{{item.fechaventa}}</td>
+      <td>{{item.totalarticulos}}</td>
+      <td>{{item.subtotalventa}}</td>
+      <td>{{item.iva}}</td>
+      <td>{{item.totalimporte}}</td>
+      <td>{{item.tipopago}}</td>
+      <td>{{item.comisiontbk}}</td>
+      <td>{{item.comunicacionpos}}</td>
+      <td>{{item.estadotransbank}}</td>
+      <td>{{item.trazastattransbk}}</td>
+    </tr>
+  </tbody>
+  </table>

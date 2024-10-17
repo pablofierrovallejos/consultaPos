@@ -14,8 +14,6 @@ import { Router } from '@angular/router';
 })
 export class HomeComponent {
 
-
-
   dataProductos : any[] = [];
   dataventas : any[] = [];
   dataconsultaventas : any[] = [];
@@ -171,7 +169,6 @@ export class HomeComponent {
     }, 0);
 
     console.log("Total: "+  this.totalMonto + 'largo:' + this.dataconsultaventas.length)
-    //console.log('Json' + JSON.stringify(this.dataconsultaventas));
     console.log("llenarDataConsultaVentas: " + sfecha);
     })
   }
