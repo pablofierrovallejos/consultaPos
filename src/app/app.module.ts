@@ -37,7 +37,8 @@ import { GastosComponent } from './components/gastos/gastos.component';
     NgxChartsModule,
     BrowserAnimationsModule,
     MatToolbarModule,
-    MatIconModule
+    MatIconModule,
+    ReactiveFormsModule
   ],
   providers: [
     {

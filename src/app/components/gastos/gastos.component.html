@@ -20,8 +20,46 @@
 </h2> 
 
 
+<br>
+<br><br>
+<form #formularioMascota="ngForm" (ngSubmit)="formularioEnviado2()">
+<table class="styled-table" align="center" id="excel-table">
+  <thead class="table-dark">
+ </thead>
+ <tbody>
+  <tr align="center"><td align="center"><h2>Formulario ingreso Gastos</h2></td></tr> 
+  <tr>
+    <td>Fecha</td>
+    <td><input type="text" name="fecha" placeholder="fecha" [(ngModel)]="gastosModel.fecha"></td>
+  </tr>   
+  <tr>
+    <td>Nombre Item</td>
+    <td><input type="text" name="item" placeholder="item" [(ngModel)]="gastosModel.item"></td>
+  </tr>   
+  <tr>
+    <td>Cantidad</td>
+    <td><input type="text" name="cantidad" placeholder="cantidad" [(ngModel)]="gastosModel.cantidad"></td>
+  </tr>   
+  <tr>
+    <td>Monto Total</td>
+    <td><input type="text" name="montotoal" placeholder="montototal" [(ngModel)]="gastosModel.montototal"></td>
+  </tr>   
+  <tr>
+    <td>Descripción</td>
+    <td><input type="text" name="descripcion" placeholder="descripcion" [(ngModel)]="gastosModel.descripcion"></td>
+  </tr>   
+  <tr>
+    <td><button type="submit">Guardar</button></td><td></td>
+  </tr>   
+</tbody>
+</table>
 
-<p></p>
+</form>
+
+
+
+
+<p>.</p><p>.</p>
   <table class="styled-table" align="center" id="excel-table">
     <thead class="table-dark">
     <tr>
@@ -30,7 +68,7 @@
       <th>Fecha compra</th>
       <th>Item</th>
       <th>Cantidad</th>
-      <th>Monto Totales </th>
+      <th>MontoTotal </th>
       <th>Descripción</th>
     </tr>
    </thead>
