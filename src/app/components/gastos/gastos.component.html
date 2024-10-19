@@ -30,7 +30,7 @@
   <tr align="center"><td align="center"><h2>Formulario ingreso Gastos</h2></td></tr> 
   <tr>
     <td>Fecha</td>
-    <td><input type="text" name="fecha" placeholder="fecha" [(ngModel)]="gastosModel.fecha"></td>
+    <td><input type="text" name="fecha" placeholder="fecha" [(ngModel)]="gastosModel.fecha" readonly></td>
   </tr>   
   <tr>
     <td>Nombre Item</td>
@@ -46,7 +46,7 @@
   </tr>   
   <tr>
     <td>Descripción</td>
-    <td><input type="text" name="descripcion" placeholder="descripcion" [(ngModel)]="gastosModel.descripcion"></td>
+    <td><input type="text"   name="descripcion" placeholder="descripcion" [(ngModel)]="gastosModel.descripcion"></td>
   </tr>   
   <tr>
     <td><button type="submit">Guardar</button></td><td></td>
@@ -85,3 +85,6 @@
     </tr>
   </tbody>
   </table>
+
+<hr>
+<p>.</p>

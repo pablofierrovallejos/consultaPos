@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs';
 
 //const cors = require('cors')
@@ -45,7 +45,7 @@ export class ApiService {
   private urlconsultaImagenCliente = this.baseUrl +'/api/productos/consultar-imagencli';
 
   private urlconsultaCostos = this.baseUrl +'/api/productos/consultar-costos/';
-  private urlagregarCostos = this.baseUrl +'/api/productos/agregar-costos/';
+  private urlagregarCostos = this.baseUrl +'/api/productos/agregar-costos';
 
   constructor(private http: HttpClient) { }
 
@@ -60,12 +60,16 @@ export class ApiService {
   public getDataConsultaCostos(sfecha): Observable<any>{
     return this.http.get<any>(this.urlconsultaCostos + sfecha);
   }
+
+
   public setDataConsultaCostos(dCostos): Observable<any>{
-    return this.http.post(this.urlagregarCostos,  dCostos , {
-      headers: {
-        'Access-Control-Allow-Origin': '*'
-      }})  ;
+    const headers= new HttpHeaders()
+    .set('content-type', 'application/json')
+    console.log("#####ssss######"); 
+    let options = { headers: headers };
+    return this.http.post(this.urlagregarCostos,  dCostos , options)  ;
   }
+
 
   public getDataConsultaVentas(sfecha): Observable<any>{
     return this.http.get<any>(this.urlApiConsultaVentas + sfecha);

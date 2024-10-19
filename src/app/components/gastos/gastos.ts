@@ -1,7 +1,6 @@
 export class Gastos {
     constructor(
-          public idcostos: number,
-          public fecha: string,
+          public fecha: Date,
           public item: string,
           public cantidad: number,
           public montototal: number,

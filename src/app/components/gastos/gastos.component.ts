@@ -10,8 +10,10 @@ import { Gastos } from "./gastos";
   styleUrls: ['./gastos.component.css']
 })
 export class GastosComponent {
-  mascotaModel = new Mascota("", "", 0);
-  gastosModel = new Gastos(0,"","",0,0,"");
+ 
+
+
+  gastosModel = new Gastos(new Date(),"",1,1,"");
 
   dataconsultagastos: any[] = [];
   pipe = new DatePipe('en-US');
@@ -80,7 +82,10 @@ export class GastosComponent {
 
   formularioEnviado2(){
     console.log("El formulario fue enviado y la mascota es: ", this.gastosModel)
-    this.ApiService.setDataConsultaCostos(this.gastosModel).subscribe(data=>console.log(data));
+    this.ApiService.setDataConsultaCostos(this.gastosModel).subscribe(
+      data=>console.log(data),
+      error => console.error('Error:', error)
+    );
   }
 
 
