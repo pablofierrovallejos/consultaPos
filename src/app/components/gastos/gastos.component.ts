@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { ApiService } from '../../service/api.service';
 import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { Mascota } from "./mascota";
 import { Gastos } from "./gastos";
 @Component({
   selector: 'app-gastos',
@@ -32,6 +31,7 @@ export class GastosComponent {
   ngOnInit(): void{
     this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
     this.ChangedFormat2  = this.pipe.transform(this.changed, 'dd/MM/YYYY') ?? '';
+    this.nombreMesActual = this.obtenerNombreMes(this.ChangedFormat.substring(3,5));
     this.llenarDataConsultaCostos(this.ChangedFormat);
     console.log("ngOnInit(): " + this.ChangedFormat);
   }
@@ -64,11 +64,18 @@ export class GastosComponent {
     throw new Error('Method not implemented.');
   }
     
-  mesSiguiente() {
-    throw new Error('Method not implemented.');
+  mesAnterior(){
+    this.changed.setMonth(this.changed.getMonth() - 1);
+    this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
+    this.ngOnInit()  //llamamos a la funcion ngOnInit para que se actualice la pagina
+    //alert('click mes anterior' + this.ChangedFormat);
   }
-  mesAnterior() {
-    throw new Error('Method not implemented.');
+
+  mesSiguiente(){
+    this.changed.setMonth(this.changed.getMonth() + 1);
+    this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
+    this.ngOnInit()  //llamamos a la funcion ngOnInit para que se actualice la pagina
+    //alert('click mes anterior' + this.ChangedFormat);
   }
 
   llenarDataConsultaCostos(sfecha){
@@ -87,6 +94,22 @@ export class GastosComponent {
       error => console.error('Error:', error)
     );
   }
+
+  obtenerNombreMes (numero) {
+    console.log('mes nro: '+ numero)
+    let miFecha = new Date();
+    if (0 < numero && numero <= 12) {
+      miFecha.setMonth(numero - 1);
+      return this.capitalizeFirstLetter(new Intl.DateTimeFormat('es-ES', { month: 'long'}).format(miFecha));
+    } else {
+      return '';
+    }
+  }
+
+  capitalizeFirstLetter(string) {
+    return string[0].toUpperCase() + string.slice(1);
+  }
+
 
 
 }

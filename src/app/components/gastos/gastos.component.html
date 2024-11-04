@@ -16,12 +16,11 @@
     <button (click)="mesAnterior()">(Ver Mes Anterior)</button> 
     <button (click)="mesSiguiente()">(Ver Mes Siguiente)</button>  
     Gastos diarios Montos Totales {{nombreMesActual}} 
-    <button  (click)="ingresargastos()"> Ingresar Gastos </button>
 </h2> 
 
 
+
 <br>
-<br><br>
 <form #formularioMascota="ngForm" (ngSubmit)="formularioEnviado2()">
 <table class="styled-table" align="center" id="excel-table">
   <thead class="table-dark">
@@ -70,6 +69,7 @@
       <th>Cantidad</th>
       <th>MontoTotal </th>
       <th>Descripción</th>
+      <th>Funciones</th>
     </tr>
    </thead>
    <tbody>
@@ -81,7 +81,7 @@
       <td>{{item.cantidad}}</td>
       <td>{{item.montototal}}</td>
       <td>{{item.descripcion}}</td>
-    
+      <td><img src="../../../assets/basura.png" width="25" height="25"></td>
     </tr>
   </tbody>
   </table>
