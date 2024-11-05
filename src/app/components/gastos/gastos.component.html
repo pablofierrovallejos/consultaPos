@@ -73,6 +73,7 @@
     </tr>
    </thead>
    <tbody>
+    <!-- <form #formularioElimina="ngForm" (ngSubmit)="formularioEnviado3()"> -->
     <tr *ngFor="let item of dataconsultagastos, index as id">
       <td>{{ id+1 }}</td>
       <td>{{item.idcostos}}</td>
@@ -81,8 +82,20 @@
       <td>{{item.cantidad}}</td>
       <td>{{item.montototal}}</td>
       <td>{{item.descripcion}}</td>
-      <td><img src="../../../assets/basura.png" width="25" height="25"></td>
+      <td>
+
+
+        <form #formularioElimina="ngForm" (ngSubmit)="formularioEnviado3(item.idcostos)">
+          <button type="submit">
+            <img src="../../../assets/basura.png" width="25" height="20">
+          </button>
+        </form>
+  
+
+
+      </td>
     </tr>
+    <!-- </form> -->
   </tbody>
   </table>
 

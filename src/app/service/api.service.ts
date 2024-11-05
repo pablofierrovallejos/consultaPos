@@ -46,6 +46,8 @@ export class ApiService {
 
   private urlconsultaCostos = this.baseUrl +'/api/productos/consultar-costos/';
   private urlagregarCostos = this.baseUrl +'/api/productos/agregar-costos';
+  private urlactualizarCostos = this.baseUrl +'/api/productos/actualizar-costo';
+
 
   constructor(private http: HttpClient) { }
 
@@ -68,6 +70,16 @@ export class ApiService {
     console.log("#####ssss######"); 
     let options = { headers: headers };
     return this.http.post(this.urlagregarCostos,  dCostos , options)  ;
+  }
+
+  
+
+  public setDataActualizarCostos(idcosto): Observable<any>{
+    const headers= new HttpHeaders()
+    .set('content-type', 'application/json')
+    console.log("ZZZZZZZZ"); 
+    let options = { headers: headers };
+    return this.http.post(this.urlactualizarCostos,  idcosto , options)  ;
   }
 
 

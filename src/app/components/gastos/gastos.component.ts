@@ -14,6 +14,8 @@ export class GastosComponent {
 
   gastosModel = new Gastos(new Date(),"",1,1,"");
 
+  idgastoeliminar: any;
+
   dataconsultagastos: any[] = [];
   pipe = new DatePipe('en-US');
 
@@ -36,10 +38,6 @@ export class GastosComponent {
     console.log("ngOnInit(): " + this.ChangedFormat);
   }
   onSubmit(customerData) {
-    // Process checkout data here
-    //this.items = this.cartService.clearCart();
-
-
     console.warn('Your order has been submitted', customerData);
   }
 
@@ -88,12 +86,25 @@ export class GastosComponent {
 
 
   formularioEnviado2(){
-    console.log("El formulario fue enviado y la mascota es: ", this.gastosModel)
+    console.log("El formulario fue enviado y los gastos son: ", this.gastosModel)
     this.ApiService.setDataConsultaCostos(this.gastosModel).subscribe(
       data=>console.log(data),
       error => console.error('Error:', error)
     );
+    this.ngOnInit();
   }
+
+  formularioEnviado3(idcostos: any) {
+    this.idgastoeliminar = idcostos;
+    this.ApiService.setDataActualizarCostos(this.idgastoeliminar).subscribe(
+      data=>console.log("id a eliminar:" + this.idgastoeliminar),
+      error => console.error('Error:', error)
+    );
+    this.ngOnInit();
+  }  
+
+
+
 
   obtenerNombreMes (numero) {
     console.log('mes nro: '+ numero)
