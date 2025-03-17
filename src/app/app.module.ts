@@ -15,6 +15,7 @@ import { ProductosComponent } from './components/productos/productos.component';
 import { SpinnerComponent } from './spinner/spinner.component'; // Add this import
 import { LoadingInterceptor } from './loading.interceptor';
 import { IngresoventaComponent } from './components/ingresoventa/ingresoventa.component';
+import { GastosComponent } from './components/gastos/gastos.component';
 
 
 @NgModule({
@@ -25,7 +26,8 @@ import { IngresoventaComponent } from './components/ingresoventa/ingresoventa.co
     EnergiaComponent,
     ProductosComponent,
     SpinnerComponent,
-    IngresoventaComponent
+    IngresoventaComponent,
+    GastosComponent
   ],
   imports: [
     BrowserModule,
@@ -35,7 +37,8 @@ import { IngresoventaComponent } from './components/ingresoventa/ingresoventa.co
     NgxChartsModule,
     BrowserAnimationsModule,
     MatToolbarModule,
-    MatIconModule
+    MatIconModule,
+    ReactiveFormsModule
   ],
   providers: [
     {

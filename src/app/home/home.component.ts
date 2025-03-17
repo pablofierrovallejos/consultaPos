@@ -80,6 +80,11 @@ export class HomeComponent {
     this.router.navigate(['/home']);
   }
 
+  iragastos() {
+    this.router.navigate(['/gastos']);
+  }
+
+
   ingresarventa(){
     this.router.navigate(['/ingresoventa']);
   }
@@ -164,7 +169,6 @@ export class HomeComponent {
     }, 0);
 
     console.log("Total: "+  this.totalMonto + 'largo:' + this.dataconsultaventas.length)
-    //console.log('Json' + JSON.stringify(this.dataconsultaventas));
     console.log("llenarDataConsultaVentas: " + sfecha);
     })
   }
