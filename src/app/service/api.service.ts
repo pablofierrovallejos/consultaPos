@@ -24,14 +24,16 @@ import {Observable} from 'rxjs';
 export class ApiService {
 
   // private baseUrl = "http://microserver:8090"
-  private baseUrl = "http://192.168.2.222:30600"
+  //private baseUrl = "http://192.168.2.222:30600"
+  curl servicio-productos.ventas2.svc.cluster.local:8090
+  private baseUrl = "http://192.168.2.2:30600"    //La ip virtual del balanceador de carga
   private urlApi = this.baseUrl + '/api/productos/listar-productos';
   private urlApiVentas = this.baseUrl +'/api/productos/listar-ventas';
   private urlApiConsultaVentas = this.baseUrl +'/api/productos/consultar-ventas/';
   private urlApiEstadVentasMes = this.baseUrl +'/api/productos/cons-estadis-mensual/';
   private urlApiEstadVentasMesProd = this.baseUrl +'/api/productos/cons-estadis-mensual-por-prod/';
   private urlApiEstadVentasMesProd2 = this.baseUrl +'/api/productos/cons-estadis-mensual-masvendido-monto/';
-  
+
 
   private urlconsultaMeas = this.baseUrl +'/api/energia/consultar-estadistica/Meas1/';
   private urlconsultaMeasMes = this.baseUrl +'/api/energia/consultar-consumo-mes/Meas1/';
