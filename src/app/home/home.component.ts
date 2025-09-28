@@ -131,9 +131,23 @@ export class HomeComponent {
     //alert('click mes anterior' + this.ChangedFormat);
   }
 
+  // Helper method para validar y limpiar datos de gráficos
+  private validateChartData(data: any[], fallbackValue: any = 0): any[] {
+    if (!data || !Array.isArray(data)) {
+      console.warn('Datos de gráfico inválidos, usando array vacío:', data);
+      return [];
+    }
+    
+    return data.map(item => ({
+      ...item,
+      value: item.value ?? fallbackValue,
+      name: item.name ?? 'Sin nombre'
+    }));
+  }
+
   llenarDataMeasMulti(sfecha){
     this.ApiService.getDataConsultaMultiMeasMes(sfecha).subscribe( datamultiMeas  => {
-      this.datamultiMeas = datamultiMeas;
+      this.datamultiMeas = this.validateChartData(datamultiMeas);
     })
     //console.log("llenarDataMeasMulti: " + this.datamultiMeas);
   }
@@ -155,34 +169,50 @@ export class HomeComponent {
 
   llenarDataConsultaVentas(sfecha){
     this.ApiService.getDataConsultaVentas(sfecha).subscribe( dataconsultaventas => {
-    this.dataconsultaventas = dataconsultaventas;
+    
+    // Validar que los datos sean un array válido
+    if (dataconsultaventas && Array.isArray(dataconsultaventas)) {
+      this.dataconsultaventas = dataconsultaventas.map(item => ({
+        ...item,
+        subtotalventa: item.subtotalventa ?? 0,
+        tipopago: item.tipopago ?? 'EFECTIVO'
+      }));
 
-    //Calculamos el TOTAL 
-    this.totalMonto = this.dataconsultaventas.reduce( function (acc, obj) { return acc + obj.subtotalventa; }, 0);
+      //Calculamos el TOTAL 
+      this.totalMonto = this.dataconsultaventas.reduce( function (acc, obj) { 
+        return acc + (obj.subtotalventa ?? 0); 
+      }, 0);
 
-    this.totalTarjeta = this.dataconsultaventas.reduce(function (acc, obj) {
-      if (obj.tipopago === 'TARJETA') {
-        return acc + obj.subtotalventa;
-      } else {
-        return acc;
-      }
-    }, 0);
+      this.totalTarjeta = this.dataconsultaventas.reduce(function (acc, obj) {
+        if (obj.tipopago === 'TARJETA') {
+          return acc + (obj.subtotalventa ?? 0);
+        } else {
+          return acc;
+        }
+      }, 0);
 
-    console.log("Total: "+  this.totalMonto + 'largo:' + this.dataconsultaventas.length)
+      console.log("Total: "+  this.totalMonto + ' largo:' + this.dataconsultaventas.length);
+    } else {
+      console.warn('Datos de ventas inválidos:', dataconsultaventas);
+      this.dataconsultaventas = [];
+      this.totalMonto = 0;
+      this.totalTarjeta = 0;
+    }
+    
     console.log("llenarDataConsultaVentas: " + sfecha);
     })
   }
 
   llenarDataConsultaMeas(sfecha){
     this.ApiService.getDataConsultaMeas(sfecha).subscribe( datameas => {
-    this.datameas = datameas;
+    this.datameas = this.validateChartData(datameas);
     //console.log("llenarDataConsultaMeas: ");
     })
   }
 
   llenarDataConsultaMeasMes(sfecha){
     this.ApiService.getDataConsultaMeasMes(sfecha).subscribe( datameas => {
-    this.datameasMes = datameas;
+    this.datameasMes = this.validateChartData(datameas);
     console.log("llenarDataConsultaMeasMes: ");
     })
   }
@@ -191,7 +221,7 @@ export class HomeComponent {
 
   llenarEstadisticaMes(sfecha){
     this.ApiService.getEstadisticasVentasMes(sfecha).subscribe( dataestadistica => {
-    this.dataestadistica = dataestadistica;
+    this.dataestadistica = this.validateChartData(dataestadistica);
     //console.log("llenarEstadisticaMes: " + sfecha);
     //console.log(this.dataestadistica);
     })
@@ -199,7 +229,7 @@ export class HomeComponent {
 
   llenarEstadisticaMesProd(sfecha, sProd){
     this.ApiService.getEstadisticasVentasMesProd(sfecha, sProd).subscribe( dataestadisticaProd => {
-    this.dataestadisticaProd = dataestadisticaProd;
+    this.dataestadisticaProd = this.validateChartData(dataestadisticaProd);
     //console.log("llenarEstadisticaMesProd: " + sfecha + ' ' + sProd);
     //console.log(this.dataestadisticaProd);
     })
@@ -207,16 +237,21 @@ export class HomeComponent {
 
   static ordenarAsc(p_array_json, p_key) {
     p_array_json.sort(function (a, b) {
-      //console.log('clave: ' + a[p_key] + ' valor: ' + b[p_key] )
-      if (a[p_key] > b[p_key]) {
-        //console.log('clave MAYOR:  ' + a[p_key] );
-        return a[p_key] 
-      }else{
-        return b[p_key]
+      // Manejar valores undefined o null
+      const aVal = a[p_key] ?? 0;
+      const bVal = b[p_key] ?? 0;
+      
+      // Devolver -1, 0, o 1 para el sort
+      if (aVal > bVal) {
+        return 1;  // a va después de b
+      } else if (aVal < bVal) {
+        return -1; // a va antes de b
+      } else {
+        return 0;  // son iguales
       }
-
     });
- }
+    return p_array_json; // Devolver el array ordenado
+  }
 
  
   llenarEstadisticaVentasMesProd(sfecha){
@@ -225,9 +260,20 @@ export class HomeComponent {
       this.ApiService.getEstadisticasVentasMesProd2(sfecha).subscribe( dataestadisticaVentasProd => {
       
       //console.log(dataestadisticaVentasProd);
-      this.dataestadisticaVentasProd = dataestadisticaVentasProd;
-      HomeComponent.ordenarAsc(dataestadisticaVentasProd, 'value');
-      //console.log( HomeComponent.ordenarAsc(dataestadisticaVentasProd, 'value'));
+      
+      // Validar y limpiar datos antes de asignar
+      if (dataestadisticaVentasProd && Array.isArray(dataestadisticaVentasProd)) {
+        this.dataestadisticaVentasProd = dataestadisticaVentasProd.map(item => ({
+          ...item,
+          value: item.value ?? 0,  // Asegurar que value no sea undefined
+          name: item.name ?? 'Sin nombre'  // Asegurar que name no sea undefined
+        }));
+        
+        HomeComponent.ordenarAsc(this.dataestadisticaVentasProd, 'value');
+      } else {
+        console.warn('Datos inválidos recibidos del API:', dataestadisticaVentasProd);
+        this.dataestadisticaVentasProd = [];
+      }
     })
   }
 

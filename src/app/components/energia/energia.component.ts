@@ -16,14 +16,14 @@ export class EnergiaComponent {
   datamultiMeas: any[] = [];
 
   changed: Date = new Date();
-  nombreMesActual = ''; 
+  nombreMesActual = '';
 
   changedFecha: Date = new Date();
 
   pipe = new DatePipe('en-US');
   newDate: string= "";
-  
-  
+
+
 
   constructor(private ApiService: ApiService, private router: Router) {
   }
@@ -95,33 +95,45 @@ export class EnergiaComponent {
     onActivate(data): void {
       console.log('Activate', JSON.parse(JSON.stringify(data)));
     }
- 
+
     onDeactivate(data): void {
       console.log('Deactivate', JSON.parse(JSON.stringify(data)));
     }
 
-    
-    llenarDataConsultaMeas(sfecha){
-      this.ApiService.getDataConsultaMeas(sfecha).subscribe( datameas => {
-      this.datameas = datameas;
-      //console.log("llenarDataConsultaMeas: ");
-      })
-    }
-  
-    llenarDataConsultaMeasMes(sfecha){
-      this.ApiService.getDataConsultaMeasMes(sfecha).subscribe( datameas => {
-      this.datameasMes = datameas;
-      console.log("llenarDataConsultaMeasMes: ");
-      })
-    }
-    llenarDataMeasMulti(sfecha){
-      this.ApiService.getDataConsultaMultiMeasMes(sfecha).subscribe( datamultiMeas  => {
-        this.datamultiMeas = datamultiMeas;
-      })
-      //console.log("llenarDataMeasMulti: " + this.datamultiMeas);
+
+  // Helper method para validar y limpiar datos de gráficos
+  private validateChartData(data: any[], fallbackValue: any = 0): any[] {
+    if (!data || !Array.isArray(data)) {
+      console.warn('Datos de gráfico inválidos, usando array vacío:', data);
+      return [];
     }
 
-    iraclientes(){
+    return data.map(item => ({
+      ...item,
+      value: item.value ?? fallbackValue,
+      name: item.name ?? 'Sin nombre'
+    }));
+  }
+
+  llenarDataConsultaMeas(sfecha){
+    this.ApiService.getDataConsultaMeas(sfecha).subscribe( datameas => {
+    this.datameas = this.validateChartData(datameas);
+    //console.log("llenarDataConsultaMeas: ");
+    })
+  }
+
+  llenarDataConsultaMeasMes(sfecha){
+    this.ApiService.getDataConsultaMeasMes(sfecha).subscribe( datameas => {
+    this.datameasMes = this.validateChartData(datameas);
+    console.log("llenarDataConsultaMeasMes: ");
+    })
+  }
+  llenarDataMeasMulti(sfecha){
+    this.ApiService.getDataConsultaMultiMeasMes(sfecha).subscribe( datamultiMeas  => {
+      this.datamultiMeas = this.validateChartData(datamultiMeas);
+    })
+    //console.log("llenarDataMeasMulti: " + this.datamultiMeas);
+  }    iraclientes(){
       this.router.navigate(['/clientes']);
     }
     iraenergia(){

@@ -25,3 +25,30 @@ Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To u
 ## Further help
 
 To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+
+
+Para compilar produccion:
+ng build --configuration=production
+
+#Para iniciar la app después de clonar
+npm install
+
+ng serve
+
+......
+Generar servicio Angular
+
+
+ng serve	//Ejecutar angular
+
+ng serve --port 4201	//ejecutar angular en un puerto determinado
+
+---
+
+ng build --configuration=production
+docker build -t servicio-ng-front-vtas:v5 .
+docker tag servicio-ng-front-vtas:v5 96552333aa/servicio-ng-front-vtas:v5
+docker push 96552333aa/servicio-ng-front-vtas:v5
+
+
+docker run -d -p 8080:80 servicio-ng-front-vtas:v5

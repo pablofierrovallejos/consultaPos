@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs';
+import { environment } from '../../environments/environment';
 
 //const cors = require('cors')
 //const express = require('express')
@@ -26,27 +27,27 @@ export class ApiService {
   // private baseUrl = "http://microserver:8090"
   //private baseUrl = "http://microserver:30600"
   //private baseUrl = "http://servicio-productos.ventas2.svc.cluster.local:8090" //esto no sirve
-  private baseUrl = "http://192.168.2.222:30600";    //La ip virtual del balanceador (redirecciona al 182.168.2.222 y 223 puerto 30600)
+  private baseUrl = environment.baseUrl;    //Configuración parametrizable desde environment
   //  API_URL: '${BACKEND_URL}${BACKEND_PORT}'
   ///const KEY = `${process.env.KEY_TO_READ}`;
   //private baseUrl = '${HOST_BACK}';
-  private urlApi = this.baseUrl + '/api/productos/listar-productos';
-  private urlApiVentas = this.baseUrl +'/api/productos/listar-ventas';
-  private urlApiConsultaVentas = this.baseUrl +'/api/productos/consultar-ventas/';
-  private urlApiEstadVentasMes = this.baseUrl +'/api/productos/cons-estadis-mensual/';
-  private urlApiEstadVentasMesProd = this.baseUrl +'/api/productos/cons-estadis-mensual-por-prod/';
-  private urlApiEstadVentasMesProd2 = this.baseUrl +'/api/productos/cons-estadis-mensual-masvendido-monto/';
+  private urlApi = this.baseUrl + '/productos/listar-productos';
+  private urlApiVentas = this.baseUrl +'/productos/listar-ventas';
+  private urlApiConsultaVentas = this.baseUrl +'/productos/consultar-ventas/';
+  private urlApiEstadVentasMes = this.baseUrl +'/productos/cons-estadis-mensual/';
+  private urlApiEstadVentasMesProd = this.baseUrl +'/productos/cons-estadis-mensual-por-prod/';
+  private urlApiEstadVentasMesProd2 = this.baseUrl +'/productos/cons-estadis-mensual-masvendido-monto/';
 
 
-  private urlconsultaMeas = this.baseUrl +'/api/energia/consultar-estadistica/Meas1/';
-  private urlconsultaMeasMes = this.baseUrl +'/api/energia/consultar-consumo-mes/Meas1/';
+  private urlconsultaMeas = this.baseUrl +'/energia/consultar-estadistica/Meas1/';
+  private urlconsultaMeasMes = this.baseUrl +'/energia/consultar-consumo-mes/Meas1/';
 
-  private urlconsultMultiMeasMes = this.baseUrl +'/api/energia/consultar-consumo-mes2/Meas1/';
-  private urlconsultaImagenCliente = this.baseUrl +'/api/productos/consultar-imagencli';
+  private urlconsultMultiMeasMes = this.baseUrl +'/energia/consultar-consumo-mes2/Meas1/';
+  private urlconsultaImagenCliente = this.baseUrl +'/productos/consultar-imagencli';
 
-  private urlconsultaCostos = this.baseUrl +'/api/productos/consultar-costos/';
-  private urlagregarCostos = this.baseUrl +'/api/productos/agregar-costos';
-  private urlactualizarCostos = this.baseUrl +'/api/productos/actualizar-costo';
+  private urlconsultaCostos = this.baseUrl +'/productos/consultar-costos/';
+  private urlagregarCostos = this.baseUrl +'/productos/agregar-costos';
+  private urlactualizarCostos = this.baseUrl +'/productos/actualizar-costo';
 
 
   constructor(private http: HttpClient) { }
