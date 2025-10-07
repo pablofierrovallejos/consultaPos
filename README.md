@@ -46,9 +46,21 @@ ng serve --port 4201	//ejecutar angular en un puerto determinado
 ---
 
 ng build --configuration=production
-docker build -t servicio-ng-front-vtas:v5 .
-docker tag servicio-ng-front-vtas:v5 96552333aa/servicio-ng-front-vtas:v5
-docker push 96552333aa/servicio-ng-front-vtas:v5
+docker build -t servicio-ng-front-vtas:v12 .
+docker tag servicio-ng-front-vtas:v12 96552333aa/servicio-ng-front-vtas:v12
+docker push 96552333aa/servicio-ng-front-vtas:v12
 
 
-docker run -d -p 8080:80 servicio-ng-front-vtas:v5
+docker run -d -p 8080:80 servicio-ng-front-vtas:v12
+
+
+# Ejecutar en modo desarrollo (usa environment.ts)
+ng serve
+
+# Ejecutar en puerto específico
+ng serve --port 4200
+
+# Ejecutar con configuración específica
+ng serve --configuration=development
+
+sudo docker run -d --name servicio-ng-front-vtas --network springcloud -p 8080:80 --restart always 96552333aa/servicio-ng-front-vtas:v12

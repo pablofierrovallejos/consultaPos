@@ -108,11 +108,37 @@ export class EnergiaComponent {
       return [];
     }
 
-    return data.map(item => ({
-      ...item,
-      value: item.value ?? fallbackValue,
-      name: item.name ?? 'Sin nombre'
-    }));
+    return data.map((item, index) => {
+      // Crear el objeto resultado con la estructura correcta para ngx-charts
+      const result: any = {};
+
+      // Manejar el campo name: usar 'namedia' si existe, sino 'name'
+      if (item.namedia) {
+        result.name = item.namedia;
+      } else if (item.name) {
+        result.name = item.name;
+      } else {
+        result.name = 'Sin nombre';
+      }
+
+      // Manejar el campo value: convertir string a number si es necesario
+      if (item.value != null) {
+        // Convertir string a number si es necesario
+        const numValue = typeof item.value === 'string' ? parseFloat(item.value) : item.value;
+        result.value = isNaN(numValue) ? fallbackValue : numValue;
+      } else {
+        result.value = fallbackValue;
+      }
+
+      // Copiar otras propiedades que puedan existir
+      Object.keys(item).forEach(key => {
+        if (key !== 'namedia' && key !== 'name' && key !== 'value') {
+          result[key] = item[key];
+        }
+      });
+
+      return result;
+    });
   }
 
   llenarDataConsultaMeas(sfecha){

@@ -138,11 +138,43 @@ export class HomeComponent {
       return [];
     }
     
-    return data.map(item => ({
-      ...item,
-      value: item.value ?? fallbackValue,
-      name: item.name ?? 'Sin nombre'
-    }));
+    return data.map((item, index) => {
+      // Crear el objeto resultado con la estructura correcta para ngx-charts
+      const result: any = {};
+      
+      // DEBUG: Ver cada item individual
+      console.log(`DEBUG - Item ${index}:`, item);
+      
+      // Manejar el campo name: usar 'namedia' si existe, sino 'name'
+      if (item.namedia) {
+        result.name = item.namedia;
+      } else if (item.name) {
+        result.name = item.name;
+      } else {
+        console.log(`DEBUG - Sin nombre válido para item ${index}, usando fallback`);
+        result.name = 'Sin nombre';
+      }
+      
+      // Manejar el campo value: convertir string a number si es necesario
+      if (item.value != null) {
+        // Convertir string a number si es necesario
+        const numValue = typeof item.value === 'string' ? parseFloat(item.value) : item.value;
+        result.value = isNaN(numValue) ? fallbackValue : numValue;
+      } else {
+        console.log(`DEBUG - Sin valor válido para item ${index}, usando fallback: ${fallbackValue}`);
+        result.value = fallbackValue;
+      }
+      
+      // Copiar otras propiedades que puedan existir
+      Object.keys(item).forEach(key => {
+        if (key !== 'namedia' && key !== 'name' && key !== 'value') {
+          result[key] = item[key];
+        }
+      });
+      
+      console.log(`DEBUG - Item ${index} transformado:`, result);
+      return result;
+    });
   }
 
   llenarDataMeasMulti(sfecha){
@@ -259,15 +291,15 @@ export class HomeComponent {
 
       this.ApiService.getEstadisticasVentasMesProd2(sfecha).subscribe( dataestadisticaVentasProd => {
       
-      //console.log(dataestadisticaVentasProd);
+      // DEBUG: Ver exactamente qué datos llegan del backend
+      console.log('DEBUG - Datos crudos del API:', dataestadisticaVentasProd);
       
-      // Validar y limpiar datos antes de asignar
+      // Usar el método validateChartData en lugar de mapeo manual
       if (dataestadisticaVentasProd && Array.isArray(dataestadisticaVentasProd)) {
-        this.dataestadisticaVentasProd = dataestadisticaVentasProd.map(item => ({
-          ...item,
-          value: item.value ?? 0,  // Asegurar que value no sea undefined
-          name: item.name ?? 'Sin nombre'  // Asegurar que name no sea undefined
-        }));
+        this.dataestadisticaVentasProd = this.validateChartData(dataestadisticaVentasProd);
+        
+        // DEBUG: Ver datos después de validación
+        console.log('DEBUG - Datos después de validación:', this.dataestadisticaVentasProd);
         
         HomeComponent.ordenarAsc(this.dataestadisticaVentasProd, 'value');
       } else {

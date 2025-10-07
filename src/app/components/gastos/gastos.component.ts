@@ -3,39 +3,54 @@ import { ApiService } from '../../service/api.service';
 import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { Gastos } from "./gastos";
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 @Component({
   selector: 'app-gastos',
   templateUrl: './gastos.component.html',
   styleUrls: ['./gastos.component.css']
 })
 export class GastosComponent {
- 
-
 
   gastosModel = new Gastos(new Date(),"",1,1,"");
-
   idgastoeliminar: any;
-
   dataconsultagastos: any[] = [];
   pipe = new DatePipe('en-US');
 
   changed: Date = new Date();
-  ChangedFormat='';   
+  ChangedFormat='';
   ChangedFormat2='';
   nombreMesActual: any;
 
+  // URL para el iframe de gastos
+  gastosUrl!: SafeResourceUrl;
 
+  constructor(private ApiService: ApiService, private router: Router, private sanitizer: DomSanitizer){
 
-  constructor(private ApiService: ApiService,private router: Router){
-   
   }
 
   ngOnInit(): void{
     this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
     this.ChangedFormat2  = this.pipe.transform(this.changed, 'dd/MM/YYYY') ?? '';
     this.nombreMesActual = this.obtenerNombreMes(this.ChangedFormat.substring(3,5));
+
+    // Generar URL para iframe de gastos con el mes actual
+    this.updateGastosUrl();
+
     this.llenarDataConsultaCostos(this.ChangedFormat);
     console.log("ngOnInit(): " + this.ChangedFormat);
+  }
+
+  // Método para actualizar la URL de gastos con el mes actual
+  updateGastosUrl(): void {
+    const currentDate = new Date(this.changed);
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const monthParam = `${year}-${month}`;
+
+    const url = `http://35.209.63.29:81/gastos?month=${monthParam}`;
+    this.gastosUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+
+    console.log('URL de gastos actualizada:', url);
   }
   onSubmit(customerData) {
     console.warn('Your order has been submitted', customerData);
@@ -59,12 +74,13 @@ export class GastosComponent {
     throw new Error('Method not implemented.');
   }
   iragastos() {
-    throw new Error('Method not implemented.');
+    this.router.navigate(['/gastos']);
   }
-    
+
   mesAnterior(){
     this.changed.setMonth(this.changed.getMonth() - 1);
     this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
+    this.updateGastosUrl(); // Actualizar URL del iframe
     this.ngOnInit()  //llamamos a la funcion ngOnInit para que se actualice la pagina
     //alert('click mes anterior' + this.ChangedFormat);
   }
@@ -72,6 +88,7 @@ export class GastosComponent {
   mesSiguiente(){
     this.changed.setMonth(this.changed.getMonth() + 1);
     this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
+    this.updateGastosUrl(); // Actualizar URL del iframe
     this.ngOnInit()  //llamamos a la funcion ngOnInit para que se actualice la pagina
     //alert('click mes anterior' + this.ChangedFormat);
   }
@@ -101,7 +118,7 @@ export class GastosComponent {
       error => console.error('Error:', error)
     );
     this.ngOnInit();
-  }  
+  }
 
 
 

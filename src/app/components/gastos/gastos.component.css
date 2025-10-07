@@ -5,3 +5,19 @@
 .styled-table th, .styled-table td { padding: 12px 15px; }
 
 .styled-table tbody tr { border-bottom: 1px solid #dddddd; } .styled-table tbody tr:nth-of-type(even) { background-color: #f3f3f3; } .styled-table tbody tr:last-of-type { border-bottom: 2px solid #009879; }
+
+/* Estilos para el iframe de gastos */
+.iframe-container {
+  width: 100%;
+  height: 800px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.iframe-container iframe {
+  border: none;
+  width: 100%;
+  height: 100%;
+}

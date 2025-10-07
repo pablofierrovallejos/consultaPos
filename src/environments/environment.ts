@@ -4,7 +4,8 @@
 
 export const environment = {
   production: false,
-  baseUrl: 'http://35.209.63.29:9090'
+  baseUrl: 'http://localhost:8001/api'  // Backend local
+
 };
 
 /*

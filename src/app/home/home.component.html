@@ -2,20 +2,20 @@
   <link rel="stylesheet" href="home.component.css">
 </head>
 
-<mat-toolbar color="primary">Login |   
-      <button  (click)="iraproductos()"> Productos </button>   | 
-      <button  (click)="iraventas()"> Ventas </button> |   
-      <button  (click)="iraenergia()"> Energía</button>  | 
-      <button  (click)="iraclientes()"> Clientes</button>  | 
-      <button  (click)="iragastos()"> Gastos</button> &nbsp;&nbsp;&nbsp; v1.0.0
+<mat-toolbar color="primary">Login |
+      <button  (click)="iraproductos()"> Productos </button>   |
+      <button  (click)="iraventas()"> Ventas </button> |
+      <button  (click)="iraenergia()"> Energía</button>  |
+      <button  (click)="iraclientes()"> Clientes</button>  |
+      <button  (click)="iragastos()"> Gastos</button> &nbsp;&nbsp;&nbsp; v1.1.0
 </mat-toolbar>
-  
+
 <div>
-<h2 align="center"> 
-    <button (click)="mesAnterior()">(Ver Mes Anterior)</button> 
-    <button (click)="mesSiguiente()">(Ver Mes Siguiente)</button>  
+<h2 align="center">
+    <button (click)="mesAnterior()">(Ver Mes Anterior)</button>
+    <button (click)="mesSiguiente()">(Ver Mes Siguiente)</button>
     Ventas diarias Montos Totales {{nombreMesActual}}
-</h2> 
+</h2>
 
 <div align = 'center'>
   <ngx-charts-bar-vertical
@@ -37,8 +37,8 @@
 <p>
   .
 </p>
-  <h2  align="center">  <button (click)="diaAnterior()">(Día Anterior)</button>  
-                        <button (click)="diaSiguiente()">(Día Siguiente)</button> 
+  <h2  align="center">  <button (click)="diaAnterior()">(Día Anterior)</button>
+                        <button (click)="diaSiguiente()">(Día Siguiente)</button>
                         Detalle de Ventas {{nombreMesActual}} {{ChangedFormat2}}</h2>
   <div align="center">
   <input type="date" (change)="SendDataonChange($event)" [(ngModel)]="changed"  />
@@ -79,7 +79,7 @@
     </tr>
   </tbody>
   </table>
- 
+
 </div>
 
 <div style="width: 60%; margin: 0px auto;">
@@ -153,6 +153,6 @@
       (select)="onSelect($event)">
     </ngx-charts-bar-vertical>
   </div>
-  
+
 
 
