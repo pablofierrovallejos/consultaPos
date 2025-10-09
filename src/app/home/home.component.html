@@ -2,12 +2,63 @@
   <link rel="stylesheet" href="home.component.css">
 </head>
 
-<mat-toolbar color="primary">Login |
+<!-- Formulario de Login -->
+<div *ngIf="!isAuthenticated" class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>ConsultaPos</h1>
+      <h2>Sistema de Gestión</h2>
+    </div>
+    
+    <form (ngSubmit)="login()" class="login-form">
+      <div class="form-group">
+        <label for="username">Usuario:</label>
+        <input 
+          type="text" 
+          id="username" 
+          [(ngModel)]="username" 
+          name="username" 
+          required 
+          class="form-control"
+          placeholder="Ingrese su usuario">
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Contraseña:</label>
+        <input 
+          type="password" 
+          id="password" 
+          [(ngModel)]="password" 
+          name="password" 
+          required 
+          class="form-control"
+          placeholder="Ingrese su contraseña">
+      </div>
+      
+      <div *ngIf="loginError" class="error-message">
+        {{ loginError }}
+      </div>
+      
+      <button type="submit" class="login-btn">Iniciar Sesión</button>
+    </form>
+    
+    <div class="login-footer">
+      <p>v1.1.0</p>
+    </div>
+  </div>
+</div>
+
+<!-- Contenido principal (cuando está autenticado) -->
+<div *ngIf="isAuthenticated">
+
+<mat-toolbar color="primary">
+      <span>Bienvenido | </span>
       <button  (click)="iraproductos()"> Productos </button>   |
       <button  (click)="iraventas()"> Ventas </button> |
       <button  (click)="iraenergia()"> Energía</button>  |
       <button  (click)="iraclientes()"> Clientes</button>  |
-      <button  (click)="iragastos()"> Gastos</button> &nbsp;&nbsp;&nbsp; v1.1.0
+      <button  (click)="iragastos()"> Gastos</button> |
+      <button  (click)="logout()" class="logout-btn"> Cerrar Sesión</button> &nbsp;&nbsp;&nbsp; v1.1.0
 </mat-toolbar>
 
 <div>
@@ -112,7 +163,7 @@
     <ngx-charts-bar-vertical
       [view]="view"
       [scheme]="colorSchemeBar"
-      [results]="dataestadisticaProd"
+      [results]="dataestadisticaVentasProd"
       [gradient]="gradient"
       [xAxis]="showXAxis"
       [yAxis]="showYAxis"
@@ -154,5 +205,4 @@
     </ngx-charts-bar-vertical>
   </div>
 
-
-
+</div> <!-- Cierre del div de contenido autenticado -->

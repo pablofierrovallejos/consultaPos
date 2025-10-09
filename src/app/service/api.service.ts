@@ -120,5 +120,25 @@ export class ApiService {
     return this.http.get<any>(this.urlconsultaImagenCliente + "/" + sfecha);
   }
 
+  // Métodos alias para compatibilidad con HomeComponent
+  public getProductos(): Observable<any>{
+    return this.getData();
+  }
+
+  public getVentas(): Observable<any>{
+    return this.getDataVentas();
+  }
+
+  public getVentasEstadistica(fecha: string): Observable<any>{
+    return this.getEstadisticasVentasMes(fecha);
+  }
+
+  public getVentasDia(fecha: string): Observable<any>{
+    return this.getDataConsultaVentas(fecha);
+  }
+
+  public getVentasEstadisticaProductos(fecha: string): Observable<any>{
+    return this.getEstadisticasVentasMesProd2(fecha);
+  }
 
 }

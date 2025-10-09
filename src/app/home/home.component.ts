@@ -14,433 +14,278 @@ import { Router } from '@angular/router';
 })
 export class HomeComponent {
 
+  // Propiedades de autenticación
+  isAuthenticated: boolean = false;
+  username: string = '';
+  password: string = '';
+  loginError: string = '';
+  
+  // Credenciales válidas
+  private readonly validUsername = 'hp';
+  private readonly validPassword = 'hp';
+  private readonly authCookieName = 'consultaPos_auth';
+
   dataProductos : any[] = [];
   dataventas : any[] = [];
-  dataconsultaventas : any[] = [];
   dataestadistica: any[] = [];
+  dataconsultaventas: any[] = [];
+  dataestadisticaVentasProd: any[] = [];
   dataestadisticaProd: any[] = [];
-  dataestadisticaVentasProd:  any[] = [];
 
-  datameas: any[] = [];
-  datameasMes: any[] = [];
-  datamultiMeas: any[] = [];
+  // Propiedades para totales
+  totalMonto: number = 0;
+  totalTarjeta: number = 0;
 
-  changed: Date = new Date();
-  ChangedFormat='';   
-  ChangedFormat2='';
-  nombreMesActual = ''; 
+  // Propiedades adicionales para gráficos
+  label: string = 'Porcentaje';
+  animations: boolean = true;
+  y_etiquetaVtaDiariaCant: string = 'Cantidad';
+  showXAxisLabelVMP: string = 'Productos';
 
-  changedFecha: Date = new Date();
+  nombreMesActual = "";
+  nombreMesAnterior = "";
+  nombreMesSiguiente = "";
+  MesActual= "";
+  fecha = new Date();
+  changed : any;
+  ChangedFormat: any;
+  ChangedFormat2: any;
+  MesActualFormat: any;
+  mesActualparaProductos:any;
 
-  pipe = new DatePipe('en-US');
-  newDate: string= "";
+  // Propiedades para los gráficos
+  view: [number, number] = [800, 500];
+  showXAxis = true;
+  showYAxis = true;
+  gradient = false;
+  showLegend = true;
+  showXAxisLabel = true;
+  xAxisLabel = 'Días';
+  showYAxisLabel = true;
+  yAxisLabel = 'Importe';
+  showDataLabel = true;
+  xAxisLabelVMP='Productos';
   
- 
-  totalMonto :number=0;
-  totalTarjeta:number=0;
- 
-  /*name of the excel-file which will be downloaded. */ 
-  fileName= 'ExcelSheet.xlsx';
+  colorSchemeBar: Color = {
+    name: 'customScheme',
+    selectable: true,
+    group: ScaleType.Ordinal,
+    domain: ['#f44336', '#ff9800', '#ffeb3b', '#4caf50', '#2196f3', '#9c27b0']
+  };
 
-
-  constructor(private ApiService: ApiService, private router: Router){
-   // Object.assign(this, { this:this.dataestadistica });
-   Object.assign(this, { this:this.dataestadistica });
+  constructor(private api: ApiService, private router: Router) {
+    // Verificar autenticación al cargar
+    this.checkAuthenticationStatus();
   }
 
+  ngOnInit(): void {
+    if (this.isAuthenticated) {
+      this.loadDashboardData();
+    }
+  }
+
+  // Método para verificar el estado de autenticación
+  checkAuthenticationStatus(): void {
+    const authCookie = this.getCookie(this.authCookieName);
+    this.isAuthenticated = authCookie === 'authenticated';
+  }
+
+  // Método para cargar datos del dashboard
+  loadDashboardData(): void {
+    this.getProductos();
+    this.getVentas();
+    this.getVentasEstadistica();
+    this.getVentasDia();
+    this.getVentasEstadisticaProductos();
+  }
+
+  // Método de login
+  login(): void {
+    this.loginError = '';
+    
+    if (this.username === this.validUsername && this.password === this.validPassword) {
+      this.isAuthenticated = true;
+      this.setCookie(this.authCookieName, 'authenticated', 30); // Cookie válida por 30 días
+      this.loadDashboardData();
+      this.username = '';
+      this.password = '';
+    } else {
+      this.loginError = 'Usuario o contraseña incorrectos';
+      this.password = ''; // Limpiar solo la contraseña
+    }
+  }
   
-
-  
-  ngOnInit(): void{
-    this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
-    this.ChangedFormat2  = this.pipe.transform(this.changed, 'dd/MM/YYYY') ?? '';
-    this.nombreMesActual = this.obtenerNombreMes(this.ChangedFormat.substring(3,5));
-
-    this.llenarDataVentas();
-    this.llenarDataProductos();
-   
-    this.llenarDataConsultaVentas(this.ChangedFormat);
-    this.llenarEstadisticaMes(this.ChangedFormat);
-    this.llenarEstadisticaMesProd(this.ChangedFormat,'Soft Simple');
-
-    this.llenarEstadisticaVentasMesProd(this.ChangedFormat);
-    console.log("ngOnInit(): " + this.ChangedFormat);
+  // Método de logout
+  logout(): void {
+    this.isAuthenticated = false;
+    this.deleteCookie(this.authCookieName);
+    this.username = '';
+    this.password = '';
+    this.loginError = '';
   }
 
-  iraclientes(){
-      this.router.navigate(['/clientes']);
+  // Utilidades para cookies
+  setCookie(name: string, value: string, days: number): void {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
   }
-  iraenergia(){
-    this.router.navigate(['/energia']);
+
+  getCookie(name: string): string {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+    }
+    return '';
   }
+
+  deleteCookie(name: string): void {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  }
+
+  // Método para validar datos del gráfico
+  validateChartData(data: any[]): any[] {
+    return data.map(item => ({
+      name: item.namedia || item.name || 'Sin nombre',
+      value: typeof item.value === 'string' ? parseFloat(item.value) || 0 : item.value || 0
+    }));
+  }
+
+  getProductos(){
+    this.api.getProductos().subscribe((data: any) => {
+      this.dataProductos = data;
+    });
+  }
+
+  getVentas(){
+    this.api.getVentas().subscribe((data: any) => {
+      this.dataventas = data;
+    });
+  }
+
+  getVentasEstadistica(){
+    // Enviar fecha completa (primer día del mes) para el SP
+    this.MesActual = this.fecha.getFullYear()+"-"+(this.fecha.getMonth()+1).toString().padStart(2,'0')+"-01";
+    this.nombreMesActual = this.obtenerNombreMes(this.fecha.getMonth());
+    this.MesActualFormat = this.MesActual;
+    
+    this.api.getVentasEstadistica(this.MesActual).subscribe((data: any) => {
+      console.log('Datos recibidos de estadística:', data);
+      this.dataestadistica = this.validateChartData(data);
+      console.log('Datos validados para gráfico:', this.dataestadistica);
+    });
+  }
+
+  getVentasDia(){
+    this.changed = this.fecha.getFullYear()+"-"+(this.fecha.getMonth()+1).toString().padStart(2,'0')+"-"+this.fecha.getDate().toString().padStart(2,'0');
+    this.ChangedFormat = this.changed;
+    this.ChangedFormat2 = this.fecha.getDate().toString().padStart(2,'0');
+    
+    this.api.getVentasDia(this.changed).subscribe((data: any) => {
+      this.dataconsultaventas = data;
+    });
+  }
+
+  getVentasEstadisticaProductos(){
+    // Enviar fecha completa (primer día del mes) para el SP
+    this.mesActualparaProductos = this.fecha.getFullYear()+"-"+(this.fecha.getMonth()+1).toString().padStart(2,'0')+"-01";
+    
+    this.api.getVentasEstadisticaProductos(this.mesActualparaProductos).subscribe((data: any) => {
+      console.log('Datos recibidos de productos:', data);
+      this.dataestadisticaVentasProd = this.validateChartData(data);
+      console.log('Datos validados para gráfico productos:', this.dataestadisticaVentasProd);
+    });
+  }
+
   iraproductos(){
     this.router.navigate(['/productos']);
   }
+
   iraventas(){
-    this.router.navigate(['/home']);
-  }
-
-  iragastos() {
-    this.router.navigate(['/gastos']);
-  }
-
-
-  ingresarventa(){
     this.router.navigate(['/ingresoventa']);
   }
 
-  exportexcel(): void 
-  {
-     /* table id is passed over here */   
-     let element = document.getElementById('excel-table'); 
-     const ws: XLSX.WorkSheet =XLSX.utils.table_to_sheet(element);
-
-     /* generate workbook and add the worksheet */
-     const wb: XLSX.WorkBook = XLSX.utils.book_new();
-     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-
-     /* save to file */
-     XLSX.writeFile(wb, this.fileName);
-    
+  iraenergia(){
+    this.router.navigate(['/energia']);
   }
 
-  diaAnterior(){
-    this.changed.setDate(this.changed.getDate() - 1);
-    this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
-    this.ngOnInit()  //llamamos a la funcion ngOnInit para que se actualice la pagina
+  iraclientes(){
+    this.router.navigate(['/clientes']);
   }
-  diaSiguiente(){
-    this.changed.setDate(this.changed.getDate() + 1);
-    this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
-    this.ngOnInit()  //llamamos a la funcion ngOnInit para que se actualice la pagina
-    console.log('this.changed ' + this.changed)
-    console.log('this.changed.getDate() ' + this.changed.getDate())
+
+  iragastos(){
+    this.router.navigate(['/gastos']);
   }
 
   mesAnterior(){
-    this.changed.setMonth(this.changed.getMonth() - 1);
-    this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
-    this.ngOnInit()  //llamamos a la funcion ngOnInit para que se actualice la pagina
-    //alert('click mes anterior' + this.ChangedFormat);
+    this.fecha.setMonth(this.fecha.getMonth()-1);
+    this.getVentasEstadistica();
+    this.getVentasEstadisticaProductos();
   }
 
   mesSiguiente(){
-    this.changed.setMonth(this.changed.getMonth() + 1);
-    this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
-    this.ngOnInit()  //llamamos a la funcion ngOnInit para que se actualice la pagina
-    //alert('click mes anterior' + this.ChangedFormat);
+    this.fecha.setMonth(this.fecha.getMonth()+1);
+    this.getVentasEstadistica();
+    this.getVentasEstadisticaProductos();
   }
 
-  // Helper method para validar y limpiar datos de gráficos
-  private validateChartData(data: any[], fallbackValue: any = 0): any[] {
-    if (!data || !Array.isArray(data)) {
-      console.warn('Datos de gráfico inválidos, usando array vacío:', data);
-      return [];
-    }
-    
-    return data.map((item, index) => {
-      // Crear el objeto resultado con la estructura correcta para ngx-charts
-      const result: any = {};
-      
-      // DEBUG: Ver cada item individual
-      console.log(`DEBUG - Item ${index}:`, item);
-      
-      // Manejar el campo name: usar 'namedia' si existe, sino 'name'
-      if (item.namedia) {
-        result.name = item.namedia;
-      } else if (item.name) {
-        result.name = item.name;
-      } else {
-        console.log(`DEBUG - Sin nombre válido para item ${index}, usando fallback`);
-        result.name = 'Sin nombre';
-      }
-      
-      // Manejar el campo value: convertir string a number si es necesario
-      if (item.value != null) {
-        // Convertir string a number si es necesario
-        const numValue = typeof item.value === 'string' ? parseFloat(item.value) : item.value;
-        result.value = isNaN(numValue) ? fallbackValue : numValue;
-      } else {
-        console.log(`DEBUG - Sin valor válido para item ${index}, usando fallback: ${fallbackValue}`);
-        result.value = fallbackValue;
-      }
-      
-      // Copiar otras propiedades que puedan existir
-      Object.keys(item).forEach(key => {
-        if (key !== 'namedia' && key !== 'name' && key !== 'value') {
-          result[key] = item[key];
-        }
-      });
-      
-      console.log(`DEBUG - Item ${index} transformado:`, result);
-      return result;
-    });
+  diaAnterior(){
+    this.fecha.setDate(this.fecha.getDate()-1);
+    this.getVentasDia();
   }
 
-  llenarDataMeasMulti(sfecha){
-    this.ApiService.getDataConsultaMultiMeasMes(sfecha).subscribe( datamultiMeas  => {
-      this.datamultiMeas = this.validateChartData(datamultiMeas);
-    })
-    //console.log("llenarDataMeasMulti: " + this.datamultiMeas);
+  diaSiguiente(){
+    this.fecha.setDate(this.fecha.getDate()+1);
+    this.getVentasDia();
   }
 
-
-  llenarDataProductos(){
-      this.ApiService.getData().subscribe( dataProductos => {
-        this.dataProductos = dataProductos;
-      })
-      //console.log("llenarDataProductos: " + this.dataProductos);
+  obtenerNombreMes(mes: number): string {
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return meses[mes];
   }
-
-  llenarDataVentas(){
-      this.ApiService.getDataVentas().subscribe( dataventas => {
-      this.dataventas = dataventas;
-      //console.log("llenarDataVentas: " + this.dataventas);
-    })
-  }
-
-  llenarDataConsultaVentas(sfecha){
-    this.ApiService.getDataConsultaVentas(sfecha).subscribe( dataconsultaventas => {
-    
-    // Validar que los datos sean un array válido
-    if (dataconsultaventas && Array.isArray(dataconsultaventas)) {
-      this.dataconsultaventas = dataconsultaventas.map(item => ({
-        ...item,
-        subtotalventa: item.subtotalventa ?? 0,
-        tipopago: item.tipopago ?? 'EFECTIVO'
-      }));
-
-      //Calculamos el TOTAL 
-      this.totalMonto = this.dataconsultaventas.reduce( function (acc, obj) { 
-        return acc + (obj.subtotalventa ?? 0); 
-      }, 0);
-
-      this.totalTarjeta = this.dataconsultaventas.reduce(function (acc, obj) {
-        if (obj.tipopago === 'TARJETA') {
-          return acc + (obj.subtotalventa ?? 0);
-        } else {
-          return acc;
-        }
-      }, 0);
-
-      console.log("Total: "+  this.totalMonto + ' largo:' + this.dataconsultaventas.length);
-    } else {
-      console.warn('Datos de ventas inválidos:', dataconsultaventas);
-      this.dataconsultaventas = [];
-      this.totalMonto = 0;
-      this.totalTarjeta = 0;
-    }
-    
-    console.log("llenarDataConsultaVentas: " + sfecha);
-    })
-  }
-
-  llenarDataConsultaMeas(sfecha){
-    this.ApiService.getDataConsultaMeas(sfecha).subscribe( datameas => {
-    this.datameas = this.validateChartData(datameas);
-    //console.log("llenarDataConsultaMeas: ");
-    })
-  }
-
-  llenarDataConsultaMeasMes(sfecha){
-    this.ApiService.getDataConsultaMeasMes(sfecha).subscribe( datameas => {
-    this.datameasMes = this.validateChartData(datameas);
-    console.log("llenarDataConsultaMeasMes: ");
-    })
-  }
-
-  
-
-  llenarEstadisticaMes(sfecha){
-    this.ApiService.getEstadisticasVentasMes(sfecha).subscribe( dataestadistica => {
-    this.dataestadistica = this.validateChartData(dataestadistica);
-    //console.log("llenarEstadisticaMes: " + sfecha);
-    //console.log(this.dataestadistica);
-    })
-  }
-
-  llenarEstadisticaMesProd(sfecha, sProd){
-    this.ApiService.getEstadisticasVentasMesProd(sfecha, sProd).subscribe( dataestadisticaProd => {
-    this.dataestadisticaProd = this.validateChartData(dataestadisticaProd);
-    //console.log("llenarEstadisticaMesProd: " + sfecha + ' ' + sProd);
-    //console.log(this.dataestadisticaProd);
-    })
-  }
-
-  static ordenarAsc(p_array_json, p_key) {
-    p_array_json.sort(function (a, b) {
-      // Manejar valores undefined o null
-      const aVal = a[p_key] ?? 0;
-      const bVal = b[p_key] ?? 0;
-      
-      // Devolver -1, 0, o 1 para el sort
-      if (aVal > bVal) {
-        return 1;  // a va después de b
-      } else if (aVal < bVal) {
-        return -1; // a va antes de b
-      } else {
-        return 0;  // son iguales
-      }
-    });
-    return p_array_json; // Devolver el array ordenado
-  }
-
- 
-  llenarEstadisticaVentasMesProd(sfecha){
-      //console.log("getEstadisticasVentasMesProd2: " + sfecha );
-
-      this.ApiService.getEstadisticasVentasMesProd2(sfecha).subscribe( dataestadisticaVentasProd => {
-      
-      // DEBUG: Ver exactamente qué datos llegan del backend
-      console.log('DEBUG - Datos crudos del API:', dataestadisticaVentasProd);
-      
-      // Usar el método validateChartData en lugar de mapeo manual
-      if (dataestadisticaVentasProd && Array.isArray(dataestadisticaVentasProd)) {
-        this.dataestadisticaVentasProd = this.validateChartData(dataestadisticaVentasProd);
-        
-        // DEBUG: Ver datos después de validación
-        console.log('DEBUG - Datos después de validación:', this.dataestadisticaVentasProd);
-        
-        HomeComponent.ordenarAsc(this.dataestadisticaVentasProd, 'value');
-      } else {
-        console.warn('Datos inválidos recibidos del API:', dataestadisticaVentasProd);
-        this.dataestadisticaVentasProd = [];
-      }
-    })
-  }
-
-
-
-
-  
-  obtenerNombreMes (numero) {
-    console.log('mes nro: '+ numero)
-    let miFecha = new Date();
-    if (0 < numero && numero <= 12) {
-      miFecha.setMonth(numero - 1);
-      return this.capitalizeFirstLetter(new Intl.DateTimeFormat('es-ES', { month: 'long'}).format(miFecha));
-    } else {
-      return '';
-    }
-  }
-  
-  capitalizeFirstLetter(string) {
-    return string[0].toUpperCase() + string.slice(1);
-  }
-
 
   SendDataonChange(event: any) {
-    //console.log(event.target.value);
-    this.llenarDataConsultaVentas(event.target.value);
+    this.ChangedFormat = event.target.value;
+    this.changed = event.target.value;
+    const fechaSeleccionada = new Date(event.target.value + 'T00:00:00');
+    this.ChangedFormat2 = fechaSeleccionada.getDate().toString().padStart(2,'0');
+    
+    this.api.getVentasDia(this.changed).subscribe((data: any) => {
+      this.dataconsultaventas = data;
+    });
   }
 
   SendDataonChangeProd(event: any) {
-    let ChangedFormat = this.pipe.transform(this.changedFecha, 'YY-MM-dd') ?? '';
-    this.llenarEstadisticaMesProd(ChangedFormat, event.target.value);
+    console.log(event.target.value);
   }
 
-
-  changeFormat(changed){
-    let ChangedFormat = this.pipe.transform(this.changed, 'dd/MM/YYYY') ?? '';
-    this.newDate = ChangedFormat;
-  }
-  changeFormat2(changed){
-    let ChangedFormat2 = this.pipe.transform(this.changed, 'dd/MM/YYYY') ?? '';
-    this.newDate = ChangedFormat2;
+  onSelect(event: any) {
+    console.log(event);
   }
 
-
-  onClick() {
-    this.changeFormat(this.changed);
-    console.log("onClick: " + this.newDate);
+  exportToExcel(): void {
+    const element = document.getElementById('excel-table');
+    const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    XLSX.writeFile(wb, 'ventas-detalle.xlsx');
   }
 
-   //Para el grafico de tortas
-   view: [number, number] = [1200, 500];
-   gradient: boolean = false;
-   showLegend: boolean = false;
-   showLabels: boolean = true;
-   isDoughnut: boolean = true;
-   legendPosition: string = 'below';
-   label: string = "Total ventas mes en pesos";
-   animations: boolean = true;
-   colorScheme: Color = {
-    name: 'myScheme',
-    selectable: true,
-    group: ScaleType.Linear,
-    domain: ['#3371FF', '#3371FF', '#3371FF'],
-  };
+  // Alias para compatibilidad
+  exportexcel(): void {
+    this.exportToExcel();
+  }
 
-    //Para el gráfico de barras
-    // options
-    showXAxis = true;
-    showYAxis = true;
-    //gradient = false;
-    //showLegend = true;
-    showXAxisLabel = true;
-    showXAxisLabelVMP='Producto';
-    xAxisLabel = 'Días del mes';
-    showYAxisLabel = true;
-    yAxisLabel = 'Monto en pesos $';
-    showDataLabel = true;
-    legend = false;
-    gradientBar: boolean = false;
-    colorSchemeBar: Color = {
-      name: 'myScheme',
-      selectable: true,
-      group: ScaleType.Linear,
-      domain: ['#2AB80D', '#2AB80D', '#2AB80D'],
-    };
+  // Métodos adicionales para gráficos
+  onActivate(event: any): void {
+    console.log('Activate', event);
+  }
 
-
-    y_etiquetaVtaDiariaCant='Unidades Vendidas'
-
-    yAxisLabelMeas='Potencia Watts';
-    xAxisLabelMeas='Hora';
-    colorSchemeMeas: Color = {
-      name: 'myScheme',
-      selectable: true,
-      group: ScaleType.Linear,
-      domain: ['#FF0C00', '#FF0C00', '#FF0C00'],
-    };
-
-    colorScheme2 = {
-      domain: ['#5AA454', '#E44D25', '#CFC0BB', '#7aa3e5', '#a8385d', '#aae3f5']
-    };
-
-
-   onSelect(data): void {
-     console.log('Item clicked', JSON.parse(JSON.stringify(data)));
-   }
-
-   onActivate(data): void {
-     console.log('Activate', JSON.parse(JSON.stringify(data)));
-   }
-
-   onDeactivate(data): void {
-     console.log('Deactivate', JSON.parse(JSON.stringify(data)));
-   }
-
-
-
-     // options
-  showXAxis2: boolean = true;
-  showYAxis2: boolean = true;
-  gradient2: boolean = true;
-  showLegend2: boolean = true;
-  showXAxisLabel2: boolean = true;
-  xAxisLabel2: string = 'Fecha';
-  showYAxisLabel2: boolean = true;
-  yAxisLabel2: string = 'Energía Kw/Mes';
-  legendTitle2: string = 'Meas1: Consu - Meas2: Gen';
-
-  colorScheme3: Color = {
-    name: 'myScheme',
-    selectable: true,
-    group: ScaleType.Linear,
-    domain: ['#FF0C00', '#00FF00', '#AAAAAA'],
-  };
-
+  onDeactivate(event: any): void {
+    console.log('Deactivate', event);
+  }
 }
-
-
