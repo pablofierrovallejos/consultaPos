@@ -4,7 +4,7 @@ import { DatePipe } from '@angular/common';
 import { Color, ScaleType } from '@swimlane/ngx-charts';
 import {FormGroup,FormControl,Validators,FormArray} from '@angular/forms';
 import {MatToolbarModule} from '@angular/material/toolbar';
-import * as XLSX from 'xlsx'; 
+import * as XLSX from 'xlsx';
 import { Router } from '@angular/router';
 
 @Component({
@@ -19,7 +19,7 @@ export class HomeComponent {
   username: string = '';
   password: string = '';
   loginError: string = '';
-  
+
   // Credenciales válidas
   private readonly validUsername = 'hp';
   private readonly validPassword = 'hp';
@@ -65,7 +65,7 @@ export class HomeComponent {
   yAxisLabel = 'Importe';
   showDataLabel = true;
   xAxisLabelVMP='Productos';
-  
+
   colorSchemeBar: Color = {
     name: 'customScheme',
     selectable: true,
@@ -102,7 +102,7 @@ export class HomeComponent {
   // Método de login
   login(): void {
     this.loginError = '';
-    
+
     if (this.username === this.validUsername && this.password === this.validPassword) {
       this.isAuthenticated = true;
       this.setCookie(this.authCookieName, 'authenticated', 30); // Cookie válida por 30 días
@@ -114,7 +114,7 @@ export class HomeComponent {
       this.password = ''; // Limpiar solo la contraseña
     }
   }
-  
+
   // Método de logout
   logout(): void {
     this.isAuthenticated = false;
@@ -171,7 +171,7 @@ export class HomeComponent {
     this.MesActual = this.fecha.getFullYear()+"-"+(this.fecha.getMonth()+1).toString().padStart(2,'0')+"-01";
     this.nombreMesActual = this.obtenerNombreMes(this.fecha.getMonth());
     this.MesActualFormat = this.MesActual;
-    
+
     this.api.getVentasEstadistica(this.MesActual).subscribe((data: any) => {
       console.log('Datos recibidos de estadística:', data);
       this.dataestadistica = this.validateChartData(data);
@@ -183,7 +183,7 @@ export class HomeComponent {
     this.changed = this.fecha.getFullYear()+"-"+(this.fecha.getMonth()+1).toString().padStart(2,'0')+"-"+this.fecha.getDate().toString().padStart(2,'0');
     this.ChangedFormat = this.changed;
     this.ChangedFormat2 = this.fecha.getDate().toString().padStart(2,'0');
-    
+
     this.api.getVentasDia(this.changed).subscribe((data: any) => {
       this.dataconsultaventas = data;
     });
@@ -192,7 +192,7 @@ export class HomeComponent {
   getVentasEstadisticaProductos(){
     // Enviar fecha completa (primer día del mes) para el SP
     this.mesActualparaProductos = this.fecha.getFullYear()+"-"+(this.fecha.getMonth()+1).toString().padStart(2,'0')+"-01";
-    
+
     this.api.getVentasEstadisticaProductos(this.mesActualparaProductos).subscribe((data: any) => {
       console.log('Datos recibidos de productos:', data);
       this.dataestadisticaVentasProd = this.validateChartData(data);
@@ -253,7 +253,7 @@ export class HomeComponent {
     this.changed = event.target.value;
     const fechaSeleccionada = new Date(event.target.value + 'T00:00:00');
     this.ChangedFormat2 = fechaSeleccionada.getDate().toString().padStart(2,'0');
-    
+
     this.api.getVentasDia(this.changed).subscribe((data: any) => {
       this.dataconsultaventas = data;
     });

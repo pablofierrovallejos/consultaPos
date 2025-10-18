@@ -1,4 +1,13 @@
 {
+  "/api/energia/*": {
+    "target": "http://localhost:8002",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api/energia": ""
+    }
+  },
   "/api/*": {
     "target": "http://localhost:8001",
     "secure": false,

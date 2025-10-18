@@ -45,13 +45,26 @@ ng serve --port 4201	//ejecutar angular en un puerto determinado
 
 ---
 
+# Build y Deploy de Producción
+
+## Compilar para producción
 ng build --configuration=production
-docker build -t servicio-ng-front-vtas:v12 .
-docker tag servicio-ng-front-vtas:v12 96552333aa/servicio-ng-front-vtas:v12
-docker push 96552333aa/servicio-ng-front-vtas:v12
 
+## Construir imagen Docker (incrementar versión)
+docker build -t servicio-ng-front-vtas:v14 .
+docker tag servicio-ng-front-vtas:v14 96552333aa/servicio-ng-front-vtas:v14
+docker push 96552333aa/servicio-ng-front-vtas:v14
 
-docker run -d -p 8080:80 servicio-ng-front-vtas:v12
+## Ejecutar localmente para pruebas
+docker run -d -p 8080:80 servicio-ng-front-vtas:v14
+
+## Ejecutar en producción con red Docker
+sudo docker run -d --name servicio-ng-front-vtas --network springcloud -p 8080:80 --restart always 96552333aa/servicio-ng-front-vtas:v14
+
+## Nota: Asegurarse de que los microservices backend estén ejecutándose:
+# - servicio-productos en puerto 8001 (con prefijo /api/)
+# - ms-concentrador-energia en puerto 8002 (SIN prefijo /api/energia/)
+#   Las rutas del microservicio de energía están en la raíz: /consultar-measures, /consultar-consumo-mes2, etc.
 
 
 # Ejecutar en modo desarrollo (usa environment.ts)
@@ -64,3 +77,27 @@ ng serve --port 4200
 ng serve --configuration=development
 
 sudo docker run -d --name servicio-ng-front-vtas --network springcloud -p 8080:80 --restart always 96552333aa/servicio-ng-front-vtas:v12
+
+
+
+
+# 1. Compilar para producción
+ng build --configuration=production
+
+# 2. Construir nueva imagen Docker (v14 - Fix del proxy de energía)
+docker build -t servicio-ng-front-vtas:v14 .
+docker tag servicio-ng-front-vtas:v14 96552333aa/servicio-ng-front-vtas:v14
+docker push 96552333aa/servicio-ng-front-vtas:v14
+
+# 3. Asegurarse que los microservicios backend están corriendo Y en la red springcloud
+docker ps | grep -E "servicio-productos|ms-concentrador-energia"
+docker network inspect springcloud | grep -E "servicio-productos|ms-concentrador-energia"
+
+# 4. Actualizar el frontend en producción
+docker stop servicio-ng-front-vtas
+docker rm servicio-ng-front-vtas
+docker pull 96552333aa/servicio-ng-front-vtas:v14
+sudo docker run -d --name servicio-ng-front-vtas --network springcloud -p 8080:80 --restart always 96552333aa/servicio-ng-front-vtas:v14
+
+# 5. Probar el endpoint de energía
+curl "http://localhost:8080/api/energia/consultar-consumo-mes2/Meas1/2025-10-01"
