@@ -1,4 +1,12 @@
 {
+  "/api/ventas": {
+      "target": "http://localhost:8001",
+      "secure": false,
+      "logLevel": "debug",
+      "pathRewrite": {
+        "^/api/ventas": "/api"
+      }
+  },
   "/api": {
       "target": "http://localhost:8090",
       "secure": false,

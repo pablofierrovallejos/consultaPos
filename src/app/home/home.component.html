@@ -43,7 +43,7 @@
     </form>
 
     <div class="login-footer">
-      <p>v1.1.0</p>
+      <p>v2.0.0</p>
     </div>
   </div>
 </div>
@@ -56,153 +56,208 @@
       <button  (click)="iraproductos()"> Productos </button>   |
       <button  (click)="iraventas()"> Ventas </button> |
       <button  (click)="iraenergia()"> Energía</button>  |
-      <button  (click)="iraclientes()"> Clientes</button>  |
+      <!-- <button  (click)="iraclientes()"> Clientes</button>  | -->
       <button  (click)="iragastos()"> Gastos</button> |
-      <button  (click)="logout()" class="logout-btn"> Cerrar Sesión</button> &nbsp;&nbsp;&nbsp; v1.1.0
+      <button  (click)="logout()" class="logout-btn"> Cerrar Sesión</button> &nbsp;&nbsp;&nbsp; v2.0.0
 </mat-toolbar>
 
-<div>
-<h2 align="center">
-    <button (click)="mesAnterior()">(Ver Mes Anterior)</button>
-    <button (click)="mesSiguiente()">(Ver Mes Siguiente)</button>
-    Ventas diarias Montos Totales {{nombreMesActual}}
-</h2>
+<!-- Dashboard Container -->
+<div class="dashboard-container">
 
-<div align = 'center'>
-  <ngx-charts-bar-vertical
-    [view]="view"
-    [scheme]="colorSchemeBar"
-    [results]="dataestadistica"
-    [gradient]="gradient"
-    [xAxis]="showXAxis"
-    [yAxis]="showYAxis"
-    [legend]="showLegend"
-    [showXAxisLabel]="showXAxisLabel"
-    [showYAxisLabel]="showYAxisLabel"
-    [xAxisLabel]="xAxisLabel"
-    [yAxisLabel]="yAxisLabel"
-    [showDataLabel]="showDataLabel"
-    (select)="onSelect($event)">
-  </ngx-charts-bar-vertical>
-</div>
-<p>
-  .
-</p>
-  <h2  align="center">  <button (click)="diaAnterior()">(Día Anterior)</button>
-                        <button (click)="diaSiguiente()">(Día Siguiente)</button>
-                        Detalle de Ventas {{nombreMesActual}} {{ChangedFormat2}}</h2>
-  <div align="center">
-  <input type="date" (change)="SendDataonChange($event)" [(ngModel)]="changed"  />
+  <!-- CARD 1: Ventas Diarias Montos Totales -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h2 class="card-title">📊 Ventas diarias Montos Totales {{nombreMesActual}} (${{formatearMonto(totalVentasMes)}})</h2>
+      <div class="card-actions">
+        <button class="btn-nav" (click)="mesAnterior()">← Mes Anterior</button>
+        <button class="btn-nav" (click)="mesSiguiente()">Mes Siguiente →</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="chart-container">
+        <ngx-charts-bar-vertical
+          [view]="view"
+          [scheme]="colorSchemeBar"
+          [results]="dataestadistica"
+          [gradient]="gradient"
+          [xAxis]="showXAxis"
+          [yAxis]="showYAxis"
+          [legend]="showLegend"
+          [showXAxisLabel]="showXAxisLabel"
+          [showYAxisLabel]="showYAxisLabel"
+          [xAxisLabel]="xAxisLabel"
+          [yAxisLabel]="yAxisLabel"
+          [showDataLabel]="showDataLabel"
+          (select)="onSelect($event)">
+        </ngx-charts-bar-vertical>
+      </div>
+    </div>
   </div>
 
-  <p></p>
-  <table class="styled-table" align="center" id="excel-table">
-    <thead class="table-dark">
-    <tr>
-      <th>#</th>
-      <th>idventa</th><th>fechaventa</th>
-      <!--<th>secuencia</th> -->
-      <!--<th>nroboleta</th> -->
-      <th>totalarticulos</th><th>subtotalventa</th>
-      <th>iva</th><th>totalimporte</th><th>tipopago</th>
-      <th>comisiontbk</th><th>comunicacionpos</th><th>estadotransbank</th>
-      <th>trazastattransbk</th>
-      <!--<th>longmsgtransbank</th> -->
-    </tr>
-   </thead>
-   <tbody>
-    <tr *ngFor="let item of dataconsultaventas, index as id">
-      <td>{{ id+1 }}</td>
-      <td>{{item.idventa}}</td>
-      <td>{{item.fechaventa}}</td>
-     <!-- <td>{{item.secuencia}}</td> -->
-     <!--  <td>{{item.nroboleta}}</td> -->
-      <td>{{item.totalarticulos}}</td>
-      <td>{{item.subtotalventa}}</td>
-      <td>{{item.iva}}</td>
-      <td>{{item.totalimporte}}</td>
-      <td>{{item.tipopago}}</td>
-      <td>{{item.comisiontbk}}</td>
-      <td>{{item.comunicacionpos}}</td>
-      <td>{{item.estadotransbank}}</td>
-      <td>{{item.trazastattransbk}}</td>
-     <!-- <td>{{item.longmsgtransbank}}</td> -->
-    </tr>
-  </tbody>
-  </table>
+  <!-- CARD 2: Detalle de Ventas -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h2 class="card-title">📋 Detalle de Ventas {{nombreMesActual}} {{ChangedFormat2}}</h2>
+      <div class="card-actions">
+        <button class="btn-nav" (click)="diaAnterior()">← Día Anterior</button>
+        <input type="date" (change)="SendDataonChange($event)" [(ngModel)]="changed" class="date-input" />
+        <button class="btn-nav" (click)="diaSiguiente()">Día Siguiente →</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="styled-table" id="excel-table">
+          <thead class="table-dark">
+            <tr>
+              <th>#</th>
+              <th>idventa</th><th>fechaventa</th>
+              <th class="col-items">Items</th><th>Subtotal</th>
+              <th>iva</th><th>IMPORTE</th><th>tipopago</th>
+              <th>comisiontbk</th><th>estadotransbank</th>
+              <th>BOLETA</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of dataconsultaventas, index as id">
+              <td>{{ id+1 }}</td>
+              <td>{{item.idventa}}</td>
+              <td>{{item.fechaventa}}</td>
+              <td class="col-items">{{item.totalarticulos}}</td>
+              <td>{{item.subtotalventa}}</td>
+              <td>{{item.iva}}</td>
+              <td>{{item.totalimporte}}</td>
+              <td>{{item.tipopago}}</td>
+              <td>{{item.comisiontbk}}</td>
+              <td>{{item.estadotransbank}}</td>
+              <td>
+                <span *ngIf="item.trazastattransbk === 'OK'" class="badge-boleta badge-emitido">Emitido OK</span>
+                <div *ngIf="item.trazastattransbk !== 'OK'" class="boleta-container">
+                  <span class="badge-boleta badge-sin-emitir">Sin Emitir</span>
+                  <button class="btn-emitir" title="Funcionalidad en desarrollo">Emitir</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-</div>
-
-<div style="width: 60%; margin: 0px auto;">
-   <h2>
-    Total Efectivo: ${{totalMonto-totalTarjeta}}<br>
-    Total Tarjeta: &nbsp; ${{totalTarjeta}}<br>
-    Total:   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;       ${{totalMonto}}<br>
-    Exportar a Exel: <a style="cursor: pointer" (click)="exportexcel()">
-      <mat-icon> cloud_download</mat-icon>
-    </a>
-  </h2>
-</div>
-
-<ngx-charts-advanced-pie-chart
-  [view]="view"
-  [results]="dataestadistica"
-  [gradient]="gradient"
-  [label]="label"
-  [animations]="animations"
-  (select)="onSelect($event)"
-  (activate)="onActivate($event)"
-  (deactivate)="onDeactivate($event)">
-</ngx-charts-advanced-pie-chart>
-
-
-
-<div>
-  <h2 align="center">Ventas Diarias por Producto {{nombreMesActual}}</h2>
-  <div align = 'center'>
-    <ngx-charts-bar-vertical
-      [view]="view"
-      [scheme]="colorSchemeBar"
-      [results]="dataestadisticaVentasProd"
-      [gradient]="gradient"
-      [xAxis]="showXAxis"
-      [yAxis]="showYAxis"
-      [legend]="showLegend"
-      [showXAxisLabel]="showXAxisLabel"
-      [showYAxisLabel]="showYAxisLabel"
-      [xAxisLabel]="xAxisLabel"
-      [yAxisLabel]="y_etiquetaVtaDiariaCant"
-      [showDataLabel]="showDataLabel"
-      (select)="onSelect($event)">
-    </ngx-charts-bar-vertical>
+      <div class="totales-summary">
+        <div class="total-item">
+          <span class="total-label">Total Efectivo:</span>
+          <span class="total-value">${{formatearMonto(totalMonto-totalTarjeta)}}</span>
+        </div>
+        <div class="total-item">
+          <span class="total-label">Total Tarjeta:</span>
+          <span class="total-value">${{formatearMonto(totalTarjeta)}}</span>
+        </div>
+        <div class="total-item total-final">
+          <span class="total-label">TOTAL:</span>
+          <span class="total-value">${{formatearMonto(totalMonto)}}</span>
+        </div>
+        <div class="export-action">
+          <a style="cursor: pointer" (click)="exportexcel()" class="btn-export">
+            <mat-icon>cloud_download</mat-icon>
+            Exportar a Excel
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
-  <div align="center">
-    <select id="listConcep"  (change)="SendDataonChangeProd($event)" [(ngModel)]="changed" >
-      <option value="{{item.nombreproducto}}"  *ngFor = "let item of dataProductos" >{{item.nombreproducto}}</option>
-    </select>
-    <label>Seleccione producto</label>
-  </div>
-<p>.</p>
-<p>.</p>
 
-<div>
-  <h2 align="center">Ventas Mensuales por Producto {{nombreMesActual}}</h2>
-  <div align = 'center'>
-    <ngx-charts-bar-vertical
-      [view]="view"
-      [scheme]="colorSchemeBar"
-      [results]="dataestadisticaVentasProd"
-      [gradient]="gradient"
-      [xAxis]="showXAxis"
-      [yAxis]="showYAxis"
-      [legend]="showLegend"
-      [showXAxisLabel]="showXAxisLabel"
-      [showYAxisLabel]="showYAxisLabel"
-      [xAxisLabel]="showXAxisLabelVMP"
-      [yAxisLabel]="yAxisLabel"
-      [showDataLabel]="showDataLabel"
-      (select)="onSelect($event)">
-    </ngx-charts-bar-vertical>
+  <!-- CARD 3: Gráfico de Torta -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h2 class="card-title">🥧 Distribución de Ventas {{nombreMesActual}}</h2>
+    </div>
+    <div class="card-body">
+      <div class="chart-container-pie">
+        <ngx-charts-advanced-pie-chart
+          [view]="viewPie"
+          [results]="dataestadistica"
+          [gradient]="gradient"
+          [label]="label"
+          [animations]="animations"
+          (select)="onSelect($event)"
+          (activate)="onActivate($event)"
+          (deactivate)="onDeactivate($event)">
+        </ngx-charts-advanced-pie-chart>
+      </div>
+    </div>
   </div>
+
+  <!-- CARD 4: Ventas Diarias por Producto -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h2 class="card-title">📈 Ventas Diarias por Producto {{nombreMesActual}}</h2>
+    </div>
+    <div class="card-body">
+      <div class="selector-container">
+        <label for="listConcep">Seleccione producto para ver ventas día a día:</label>
+        <select id="listConcep" (change)="SendDataonChangeProd($event)" [(ngModel)]="productoSeleccionado" class="product-select">
+          <option value="">-- Seleccione un producto --</option>
+          <option value="{{item.nombreproducto}}" *ngFor="let item of dataProductos">{{item.nombreproducto}}</option>
+        </select>
+      </div>
+
+      <div class="chart-container" *ngIf="dataestadisticaVentasDiariaProd.length > 0">
+        <ngx-charts-bar-vertical
+          [view]="view"
+          [scheme]="colorSchemeBar"
+          [results]="dataestadisticaVentasDiariaProd"
+          [gradient]="gradient"
+          [xAxis]="showXAxis"
+          [yAxis]="showYAxis"
+          [legend]="showLegend"
+          [showXAxisLabel]="showXAxisLabel"
+          [showYAxisLabel]="showYAxisLabel"
+          [xAxisLabel]="'Días del mes'"
+          [yAxisLabel]="'Cantidad vendida'"
+          [showDataLabel]="showDataLabel"
+          (select)="onSelect($event)">
+        </ngx-charts-bar-vertical>
+      </div>
+
+      <div class="empty-state" *ngIf="dataestadisticaVentasDiariaProd.length === 0 && productoSeleccionado">
+        <p>📭 No hay datos de ventas para el producto seleccionado en este mes</p>
+      </div>
+      <div class="empty-state" *ngIf="!productoSeleccionado">
+        <p>👆 Seleccione un producto para ver las ventas diarias</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD 5: Ventas Mensuales por Producto -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h2 class="card-title">🏆 Ventas Mensuales por Producto {{nombreMesActual}}</h2>
+    </div>
+    <div class="card-body">
+      <div class="chart-container">
+        <ngx-charts-bar-vertical
+          [view]="view"
+          [scheme]="colorSchemeBar"
+          [results]="dataestadisticaVentasProd"
+          [gradient]="gradient"
+          [xAxis]="showXAxis"
+          [yAxis]="showYAxis"
+          [legend]="showLegend"
+          [showXAxisLabel]="showXAxisLabel"
+          [showYAxisLabel]="showYAxisLabel"
+          [xAxisLabel]="showXAxisLabelVMP"
+          [yAxisLabel]="yAxisLabel"
+          [showDataLabel]="showDataLabel"
+          (select)="onSelect($event)">
+        </ngx-charts-bar-vertical>
+      </div>
+    </div>
+  </div>
+
+</div> <!-- Fin dashboard-container -->
+
+<!-- Botón flotante para agregar venta -->
+<button class="fab-button" (click)="iraventas()" title="Agregar Venta Manual">
+  <mat-icon>add_shopping_cart</mat-icon>
+  <span class="fab-text">Nueva Venta</span>
+</button>
 
 </div> <!-- Cierre del div de contenido autenticado -->

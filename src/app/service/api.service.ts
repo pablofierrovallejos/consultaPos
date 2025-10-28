@@ -28,6 +28,7 @@ export class ApiService {
   //private baseUrl = "http://microserver:30600"
   //private baseUrl = "http://servicio-productos.ventas2.svc.cluster.local:8090" //esto no sirve
   private baseUrl = environment.baseUrl;    //Configuración parametrizable desde environment
+  private ventasUrl = environment.ventasUrl;  //URL específica para microservicio de ventas
   //  API_URL: '${BACKEND_URL}${BACKEND_PORT}'
   ///const KEY = `${process.env.KEY_TO_READ}`;
   //private baseUrl = '${HOST_BACK}';
@@ -139,6 +140,37 @@ export class ApiService {
 
   public getVentasEstadisticaProductos(fecha: string): Observable<any>{
     return this.getEstadisticasVentasMesProd2(fecha);
+  }
+
+  // Métodos para insertar ventas
+  public insertarVenta(venta: any): Observable<any>{
+    const headers = new HttpHeaders()
+      .set('content-type', 'application/json');
+    const options = { headers: headers };
+    return this.http.post(this.ventasUrl + '/productos/insertar-venta', venta, options);
+  }
+
+  public insertarDetalleVenta(detalle: any): Observable<any>{
+    const headers = new HttpHeaders()
+      .set('content-type', 'application/json');
+    const options = { headers: headers };
+    return this.http.post(this.ventasUrl + '/productos/insertar-detalleventa', detalle, options);
+  }
+
+  // Método para actualizar producto
+  public actualizarProducto(producto: any): Observable<any>{
+    const headers = new HttpHeaders()
+      .set('content-type', 'application/json');
+    const options = { headers: headers };
+    return this.http.post(this.baseUrl + '/productos/actualizar-producto', producto, options);
+  }
+
+  // Método para agregar nuevo producto
+  public agregarProducto(producto: any): Observable<any>{
+    const headers = new HttpHeaders()
+      .set('content-type', 'application/json');
+    const options = { headers: headers };
+    return this.http.post(this.baseUrl + '/productos/agregar-producto', producto, options);
   }
 
 }

@@ -1,8 +1,8 @@
   <head>
     <link rel="stylesheet" href="./energia.component.css">
   </head>
-  
-  <mat-toolbar color="primary">Login |   <button  (click)="iraproductos()"> Productos </button>   | <button  (click)="iraventas()"> Ventas </button> |  <button  (click)="iraenergia()"> Energía</button>  | <button  (click)="iraclientes()"> Ir a cliente</button> </mat-toolbar>
+
+  <mat-toolbar color="primary">Login |   <button  (click)="iraproductos()"> Productos </button>   | <button  (click)="iraventas()"> Ventas </button> |  <button  (click)="iraenergia()"> Energía</button>  | <!-- <button  (click)="iraclientes()"> Ir a cliente</button> --> <button  (click)="iragastos()"> Gastos</button> </mat-toolbar>
 
   <div>
     <h2 align="center">Potencia consumida Watts por día {{ChangedFormat}}</h2>
@@ -23,8 +23,8 @@
         (select)="onSelect($event)">
       </ngx-charts-bar-vertical>
     </div>
-  
-  
+
+
     <div>
       <h2 align="center">Energía consumida Watts por mes {{nombreMesActual}}</h2>
       <div align = 'center'>
@@ -44,9 +44,9 @@
           (select)="onSelect($event)">
         </ngx-charts-bar-vertical>
     </div>
-  
-    
-  
+
+
+
     <div>
       <h2 align="center">Potencia consumida vs Generada Watts por día {{ChangedFormat}}</h2>
       <div align = 'center'>
@@ -68,6 +68,5 @@
         (activate)="onActivate($event)"
         (deactivate)="onDeactivate($event)">
       </ngx-charts-bar-vertical-2d>
-    </div>  
-  
-  
+    </div>
+

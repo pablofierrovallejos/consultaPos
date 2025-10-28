@@ -1,8 +1,18 @@
-<mat-toolbar color="primary">Login |   <button  (click)="iraproductos()"> Productos </button>   | <button  (click)="iraventas()"> Ventas </button> |  <button  (click)="iraenergia()"> Energía</button>  | <button  (click)="iraclientes()"> Ir a cliente</button> </mat-toolbar>
+<mat-toolbar color="primary">Login |   <button  (click)="iraproductos()"> Productos </button>   | <button  (click)="iraventas()"> Ventas </button> |  <button  (click)="iraenergia()"> Energía</button>  | <button  (click)="iragastos()"> Gastos</button> | <!-- <button  (click)="iraclientes()"> Ir a cliente</button> --> </mat-toolbar>
 
+<!-- Mensaje de Alerta -->
+<div *ngIf="mostrarMensaje" class="alerta" [ngClass]="{'alerta-success': mensajeTipo === 'success', 'alerta-error': mensajeTipo === 'error'}">
+  <span>{{ mensajeTexto }}</span>
+  <button (click)="cerrarMensajeAlerta()" class="btn-cerrar-alerta">×</button>
+</div>
 
 <div>
-    <h2 align="center"> Data Productos</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 20px auto; padding: 0 20px;">
+      <h2>Data Productos</h2>
+      <button class="btn-nuevo-producto" (click)="abrirModalNuevo()">
+        ➕ Nuevo Producto
+      </button>
+    </div>
 
     <table class="styled-table" align="center" id="excel-table">
         <thead class="table-dark">
@@ -24,13 +34,77 @@
           <td>{{item.nombreproducto}}</td>
           <td>{{item.precio}}</td>
           <td>{{item.fechacreacion}}</td>
-          <td>{{item.estado}}</td>
+          <td>
+            <span [ngClass]="{
+              'estado-activo': item.estado === 'ACTIVO',
+              'estado-inactivo': item.estado === 'INACTIVO'
+            }">
+              {{item.estado}}
+            </span>
+          </td>
           <td>{{item.cantidaddisponible}}</td>
           <td>{{item.nroposicion}}</td>
           <td><button>Eliminar</button></td>
-          <td><button>Editar</button></td>
+          <td><button (click)="abrirModalEditar(item)">Editar</button></td>
         </tr>
-        </tbody>    
+        </tbody>
     </table>
 
+</div>
+
+<!-- Modal de Edición/Nuevo -->
+<div class="modal-overlay" *ngIf="mostrarModal" (mousedown)="onOverlayMouseDown($event)">
+  <div class="modal-content" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ modoEdicion ? 'Editar Producto' : 'Nuevo Producto' }}</h2>
+      <button class="btn-cerrar" (click)="cerrarModal()">×</button>
+    </div>
+
+    <div class="modal-body" *ngIf="productoEditando">
+      <div class="form-group" *ngIf="modoEdicion">
+        <label>ID Producto:</label>
+        <input type="text" [(ngModel)]="productoEditando.idproductos" readonly class="form-control-readonly">
+      </div>
+
+      <div class="form-group">
+        <label>Nombre Producto *:</label>
+        <input type="text" [(ngModel)]="productoEditando.nombreproducto" class="form-control" placeholder="Ej: Coca Cola 500ml" required>
+      </div>
+
+      <div class="form-group">
+        <label>Precio *:</label>
+        <input type="number" [(ngModel)]="productoEditando.precio" class="form-control" step="1" min="0" placeholder="0" required>
+      </div>
+
+      <div class="form-group">
+        <label>Fecha Creación:</label>
+        <input type="date" [(ngModel)]="productoEditando.fechacreacion" class="form-control" [readonly]="modoEdicion" [class.form-control-readonly]="modoEdicion">
+      </div>
+
+      <div class="form-group">
+        <label>Estado *:</label>
+        <select [(ngModel)]="productoEditando.estado" class="form-control" required>
+          <option value="ACTIVO">ACTIVO</option>
+          <option value="INACTIVO">INACTIVO</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Cantidad Disponible *:</label>
+        <input type="number" [(ngModel)]="productoEditando.cantidaddisponible" class="form-control" min="0" placeholder="0" required>
+      </div>
+
+      <div class="form-group">
+        <label>Posición *:</label>
+        <input type="number" [(ngModel)]="productoEditando.nroposicion" class="form-control" min="0" placeholder="0" required>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn-guardar" (click)="guardarProducto()">
+        {{ modoEdicion ? 'Guardar Cambios' : 'Agregar Producto' }}
+      </button>
+    </div>
+  </div>
 </div>

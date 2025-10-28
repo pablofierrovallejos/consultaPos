@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  baseUrl: '/api'
+  baseUrl: '/api',                // Backend principal (productos, energía, etc)
+  ventasUrl: '/api/ventas'        // Microservicio de inserción de ventas en producción
 };

@@ -29,12 +29,17 @@ export class HomeComponent {
   dataventas : any[] = [];
   dataestadistica: any[] = [];
   dataconsultaventas: any[] = [];
-  dataestadisticaVentasProd: any[] = [];
+  dataestadisticaVentasProd: any[] = []; // Ventas MENSUALES por producto (totales)
+  dataestadisticaVentasDiariaProd: any[] = []; // Ventas DIARIAS de un producto específico
   dataestadisticaProd: any[] = [];
 
   // Propiedades para totales
   totalMonto: number = 0;
   totalTarjeta: number = 0;
+  totalVentasMes: number = 0; // Total de ventas del mes actual
+
+  // Producto seleccionado para gráfico diario
+  productoSeleccionado: string = '';
 
   // Propiedades adicionales para gráficos
   label: string = 'Porcentaje';
@@ -55,6 +60,7 @@ export class HomeComponent {
 
   // Propiedades para los gráficos
   view: [number, number] = [800, 500];
+  viewPie: [number, number] = [1200, 500]; // Vista más ancha para el gráfico de torta
   showXAxis = true;
   showYAxis = true;
   gradient = false;
@@ -176,6 +182,7 @@ export class HomeComponent {
       console.log('Datos recibidos de estadística:', data);
       this.dataestadistica = this.validateChartData(data);
       console.log('Datos validados para gráfico:', this.dataestadistica);
+      this.calcularTotalVentasMes(); // Calcular total del mes
     });
   }
 
@@ -186,17 +193,74 @@ export class HomeComponent {
 
     this.api.getVentasDia(this.changed).subscribe((data: any) => {
       this.dataconsultaventas = data;
+      this.calcularTotales(); // Calcular totales después de recibir los datos
     });
+  }
+
+  // Método para calcular totales de ventas del día
+  calcularTotales(): void {
+    this.totalMonto = 0;
+    this.totalTarjeta = 0;
+
+    if (this.dataconsultaventas && this.dataconsultaventas.length > 0) {
+      this.dataconsultaventas.forEach((venta: any) => {
+        const totalImporte = Number(venta.totalimporte) || 0;
+
+        // Sumar al total general
+        this.totalMonto += totalImporte;
+
+        // Si es pago con tarjeta, sumar al total de tarjeta
+        if (venta.tipopago === 'TARJETA' || venta.tipopago === 'Tarjeta' || venta.tipopago === 'tarjeta') {
+          this.totalTarjeta += totalImporte;
+        }
+      });
+    }
+
+  }
+
+  // Método para formatear montos con punto como separador de miles
+  formatearMonto(valor: number): string {
+    return Math.round(valor).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  // Método para calcular el total de ventas del mes
+  calcularTotalVentasMes(): void {
+    this.totalVentasMes = 0;
+    if (this.dataestadistica && this.dataestadistica.length > 0) {
+      this.dataestadistica.forEach((item: any) => {
+        const valor = Number(item.value) || 0;
+        this.totalVentasMes += valor;
+      });
+    }
   }
 
   getVentasEstadisticaProductos(){
     // Enviar fecha completa (primer día del mes) para el SP
     this.mesActualparaProductos = this.fecha.getFullYear()+"-"+(this.fecha.getMonth()+1).toString().padStart(2,'0')+"-01";
 
+    // Obtener ventas MENSUALES de productos más vendidos
     this.api.getVentasEstadisticaProductos(this.mesActualparaProductos).subscribe((data: any) => {
-      console.log('Datos recibidos de productos:', data);
+      console.log('Datos recibidos de productos mensuales:', data);
       this.dataestadisticaVentasProd = this.validateChartData(data);
-      console.log('Datos validados para gráfico productos:', this.dataestadisticaVentasProd);
+      console.log('Datos validados para gráfico productos mensuales:', this.dataestadisticaVentasProd);
+    });
+
+    // Si hay un producto seleccionado, cargar sus ventas diarias
+    if (this.productoSeleccionado) {
+      this.cargarVentasDiariasProducto(this.productoSeleccionado);
+    }
+  }
+
+  cargarVentasDiariasProducto(nombreProducto: string): void {
+    const fecha = this.fecha.getFullYear()+"-"+(this.fecha.getMonth()+1).toString().padStart(2,'0')+"-01";
+
+    this.api.getEstadisticasVentasMesProd(fecha, nombreProducto).subscribe((data: any) => {
+      console.log('Datos recibidos de ventas diarias del producto:', nombreProducto, data);
+      this.dataestadisticaVentasDiariaProd = this.validateChartData(data);
+      console.log('Datos validados para gráfico ventas diarias:', this.dataestadisticaVentasDiariaProd);
+    }, error => {
+      console.error('Error al cargar ventas diarias del producto:', error);
+      this.dataestadisticaVentasDiariaProd = [];
     });
   }
 
@@ -260,7 +324,10 @@ export class HomeComponent {
   }
 
   SendDataonChangeProd(event: any) {
-    console.log(event.target.value);
+    const nombreProducto = event.target.value;
+    console.log('Producto seleccionado:', nombreProducto);
+    this.productoSeleccionado = nombreProducto;
+    this.cargarVentasDiariasProducto(nombreProducto);
   }
 
   onSelect(event: any) {

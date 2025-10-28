@@ -4,7 +4,128 @@
 
 .styled-table th, .styled-table td { padding: 12px 15px; }
 
+/* Columna de items más estrecha */
+.styled-table .col-items {
+  width: 50px;
+  max-width: 50px;
+  text-align: center;
+  padding: 12px 5px;
+}
+
+/* Estilos para badges de boleta */
+.badge-boleta {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.badge-emitido {
+  background-color: #4caf50;
+  color: white;
+}
+
+.badge-sin-emitir {
+  background-color: #ffb6c1;
+  color: #c41e3a;
+}
+
+/* Contenedor para badge y botón */
+.boleta-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* Botón Emitir */
+.btn-emitir {
+  padding: 5px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-size: 0.8em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
+.btn-emitir:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.5);
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.btn-emitir:active {
+  transform: translateY(0);
+}
+
 .styled-table tbody tr { border-bottom: 1px solid #dddddd; } .styled-table tbody tr:nth-of-type(even) { background-color: #f3f3f3; } .styled-table tbody tr:last-of-type { border-bottom: 2px solid #009879; }
+
+/* ==================== SCROLLBARS PERSONALIZADOS ==================== */
+/* Scrollbar global para todo el componente home */
+:host ::ng-deep * {
+  scrollbar-width: thin;
+  scrollbar-color: #764ba2 #f1f1f1;
+}
+
+/* Scrollbar para navegadores webkit (Chrome, Safari, Edge) */
+:host ::ng-deep *::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+:host ::ng-deep *::-webkit-scrollbar-track {
+  background: linear-gradient(90deg, #f1f1f1 0%, #e8e8e8 100%);
+  border-radius: 10px;
+  margin: 5px;
+}
+
+:host ::ng-deep *::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  border: 2px solid #f1f1f1;
+  transition: all 0.3s ease;
+}
+
+:host ::ng-deep *::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  border-color: #e0e0e0;
+  box-shadow: 0 0 6px rgba(118, 75, 162, 0.5);
+}
+
+:host ::ng-deep *::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, #5a3d7a 0%, #4a5fc1 100%);
+}
+
+/* Scrollbar corner (donde se cruzan vertical y horizontal) */
+:host ::ng-deep *::-webkit-scrollbar-corner {
+  background: #f1f1f1;
+}
+
+/* Estilos específicos para tablas con scroll */
+.table-responsive::-webkit-scrollbar {
+  height: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: linear-gradient(90deg, #fafafa 0%, #f0f0f0 100%);
+  border-radius: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  border: 2px solid #fafafa;
+}
+
+/* ================================================================== */
 
 /* Estilos para el formulario de login */
 .login-container {
@@ -149,4 +270,378 @@
 
 .logout-btn:hover {
   background-color: #c82333;
+}
+
+/* ==============================================
+   ESTILOS PARA DASHBOARD CON CARDS
+   ============================================== */
+
+.dashboard-container {
+  max-width: 1400px;
+  margin: 20px auto;
+  padding: 0 20px;
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar específico para el contenedor del dashboard */
+.dashboard-container::-webkit-scrollbar {
+  width: 14px;
+}
+
+.dashboard-container::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+  border-radius: 12px;
+  margin: 10px 0;
+}
+
+.dashboard-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  border: 3px solid #fafafa;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #764ba2 0%, #667eea 100%);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2), 0 0 8px rgba(118, 75, 162, 0.4);
+}
+
+.dashboard-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 30px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #e0e0e0;
+}
+
+.dashboard-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.card-title {
+  color: white;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn-nav {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+  backdrop-filter: blur(10px);
+}
+
+.btn-nav:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.date-input {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.card-body {
+  padding: 30px;
+}
+
+.chart-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+/* Contenedor específico para gráfico de torta con scroll horizontal */
+.chart-container-pie {
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 400px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 10px 0;
+}
+
+/* Scrollbar específico para gráfico de torta */
+.chart-container-pie::-webkit-scrollbar {
+  height: 12px;
+}
+
+.chart-container-pie::-webkit-scrollbar-track {
+  background: linear-gradient(90deg, #f8f8f8 0%, #ececec 100%);
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+}
+
+.chart-container-pie::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  border: 2px solid #f8f8f8;
+  box-shadow: 0 2px 4px rgba(118, 75, 162, 0.3);
+}
+
+.chart-container-pie::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  box-shadow: 0 2px 8px rgba(118, 75, 162, 0.5);
+  transform: scaleY(1.1);
+}
+
+.table-responsive {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.styled-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.styled-table thead tr {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.styled-table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.totales-summary {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  padding: 25px;
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.total-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.total-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.total-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.total-final {
+  grid-column: span 2;
+}
+
+.total-final .total-value {
+  color: #667eea;
+  font-size: 2.2rem;
+}
+
+.export-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-export:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.selector-container {
+  margin-bottom: 30px;
+  text-align: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.selector-container label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+}
+
+.product-select {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px 16px;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.product-select:focus {
+  outline: none;
+  border-color: #764ba2;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 1.1rem;
+}
+
+.empty-state p {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .card-title {
+    font-size: 1.2rem;
+  }
+
+  .card-actions {
+    width: 100%;
+  }
+
+  .btn-nav {
+    flex: 1;
+  }
+
+  .chart-container {
+    min-height: 300px;
+  }
+
+  .totales-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .total-final {
+    grid-column: span 1;
+  }
+}
+
+/* Botón flotante para agregar venta */
+.fab-button {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 180px;
+  height: 60px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  padding: 0 20px;
+}
+
+.fab-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.fab-button:active {
+  transform: translateY(-1px);
+}
+
+.fab-button mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.fab-text {
+  white-space: nowrap;
+}
+
+/* Responsive para el botón flotante */
+@media (max-width: 768px) {
+  .fab-button {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    padding: 0;
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .fab-text {
+    display: none;
+  }
 }

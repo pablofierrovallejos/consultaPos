@@ -159,15 +159,23 @@ export class EnergiaComponent {
       this.datamultiMeas = this.validateChartData(datamultiMeas);
     })
     //console.log("llenarDataMeasMulti: " + this.datamultiMeas);
-  }    iraclientes(){
-      this.router.navigate(['/clientes']);
-    }
-    iraenergia(){
-      this.router.navigate(['/energia']);
-    }
-    iraproductos(){
-      this.router.navigate(['/productos']);
-    }
+  }
+
+  iraclientes(){
+    this.router.navigate(['/clientes']);
+  }
+
+  iragastos(){
+    this.router.navigate(['/gastos']);
+  }
+
+  iraenergia(){
+    this.router.navigate(['/energia']);
+  }
+
+  iraproductos(){
+    this.router.navigate(['/productos']);
+  }
 
     iraventas(){
       this.router.navigate(['/home']);
