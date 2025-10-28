@@ -1,6 +1,12 @@
 -- Script completo de implementación de cache para estadísticas de energía
 
 -- ===========================================================================
+-- PASO 0: Configurar zona horaria
+-- ===========================================================================
+-- Configurar zona horaria de Santiago, Chile
+SET time_zone = 'America/Santiago';
+
+-- ===========================================================================
 -- PASO 1: Crear tabla de cache
 -- ===========================================================================
 CREATE TABLE IF NOT EXISTS estadisticas_energia_dia (
@@ -140,3 +146,19 @@ se crea igualmente el sp_recalcular_estadisticas_dia
 y lo indicado por 01_crear_cache_estadisticas.sql
 
 el sp_recalcular_mes_completo no se usa, no es necesario crear
+
+
+
+Reestablecer la hora del contenedor de mysql a America/Santiago
+# Entrar al contenedor
+docker exec -it mysql-container bash
+
+# Cambiar timezone
+ln -sf /usr/share/zoneinfo/America/Santiago /etc/localtime
+echo "America/Santiago" > /etc/timezone
+
+# Salir
+exit
+
+# Reiniciar contenedor
+docker restart mysql-container
