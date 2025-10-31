@@ -59,7 +59,7 @@ export class HomeComponent {
   mesActualparaProductos:any;
 
   // Propiedades para los gráficos
-  view: [number, number] = [800, 500];
+  view: any = undefined; // undefined hace que el gráfico sea responsive
   viewPie: [number, number] = [1200, 500]; // Vista más ancha para el gráfico de torta
   showXAxis = true;
   showYAxis = true;

@@ -10,6 +10,13 @@ BEGIN
     DECLARE dfecha DATE;
     SET dfecha = STR_TO_DATE(dfechaini, '%Y-%m-%d');
 
+    -- Si es el día actual, eliminar el registro de cache para forzar recálculo
+    IF dfecha = CURDATE() THEN
+        DELETE FROM estadisticas_energia_dia
+        WHERE nombrenodo = nodo
+          AND fecha = dfecha;
+    END IF;
+
     -- Consultar desde la tabla cache (mucho más rápido)
     SELECT
         CAST(consumo_energia AS CHAR) AS consumo_energia,

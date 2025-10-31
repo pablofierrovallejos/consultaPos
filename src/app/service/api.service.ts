@@ -208,4 +208,9 @@ export class ApiService {
     return this.http.get(`${this.boletasUrl}/descargar-boleta/${filename}`, { responseType: 'blob' });
   }
 
+  // Método para obtener configuración por clave
+  public obtenerConfiguracion(clave: string): Observable<any>{
+    return this.http.get(`${this.baseUrl}/productos/configuracion/${clave}`);
+  }
+
 }

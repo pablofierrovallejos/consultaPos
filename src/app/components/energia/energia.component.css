@@ -1,0 +1,159 @@
+/* Dashboard Container */
+.dashboard-container {
+  max-width: 1400px;
+  margin: 40px auto;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* Dashboard Card */
+.dashboard-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.dashboard-card:hover {
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-5px);
+}
+
+/* Card Header */
+.card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 25px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.card-title {
+  margin: 0;
+  color: white;
+  font-size: 1.5em;
+  font-weight: 600;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Estilo para el total de energía */
+.total-energia {
+  font-size: 0.8em;
+  color: #ff4444;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 2px solid rgba(255, 68, 68, 0.3);
+  animation: pulseEnergy 2s ease-in-out infinite;
+}
+
+/* Estilo para el costo en pesos */
+.costo-energia {
+  font-size: 0.8em;
+  color: #00aa00;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 2px solid rgba(0, 170, 0, 0.3);
+  animation: pulseCosto 2s ease-in-out infinite;
+}
+
+@keyframes pulseEnergy {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(255, 68, 68, 0.6);
+  }
+}
+
+@keyframes pulseCosto {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(0, 170, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(0, 170, 0, 0.6);
+  }
+}
+
+/* Card Body */
+.card-body {
+  padding: 30px;
+}
+
+/* Chart Container */
+.chart-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Hacer que los gráficos sean responsive */
+.chart-container ngx-charts-bar-vertical,
+.chart-container ngx-charts-bar-vertical-2d {
+  width: 100% !important;
+  min-width: 100%;
+}
+
+/* Animación de entrada */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 0 10px;
+    margin: 20px auto;
+  }
+
+  .card-header {
+    padding: 20px;
+  }
+
+  .card-title {
+    font-size: 1.2em;
+  }
+
+  .total-energia {
+    font-size: 0.75em;
+    padding: 6px 12px;
+  }
+
+  .costo-energia {
+    font-size: 0.75em;
+    padding: 6px 12px;
+  }
+
+  .card-body {
+    padding: 20px;
+  }
+
+  .chart-container {
+    min-height: 300px;
+  }
+}

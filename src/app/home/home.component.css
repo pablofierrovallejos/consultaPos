@@ -396,21 +396,6 @@
   margin: 0;
 }
 
-/* Estilos para el botón de logout */
-.logout-btn {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-left: 10px;
-}
-
-.logout-btn:hover {
-  background-color: #c82333;
-}
-
 /* ==============================================
    ESTILOS PARA DASHBOARD CON CARDS
    ============================================== */
@@ -523,6 +508,14 @@
   justify-content: center;
   align-items: center;
   min-height: 400px;
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Hacer que el gráfico de barras sea responsive */
+.chart-container ngx-charts-bar-vertical {
+  width: 100% !important;
+  min-width: 100%;
 }
 
 /* Contenedor específico para gráfico de torta con scroll horizontal */

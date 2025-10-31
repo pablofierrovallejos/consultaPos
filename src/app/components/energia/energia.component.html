@@ -4,69 +4,97 @@
 
   <mat-toolbar color="primary">Login |   <button  (click)="iraproductos()"> Productos </button>   | <button  (click)="iraventas()"> Ventas </button> |  <button  (click)="iraenergia()"> Energía</button>  | <!-- <button  (click)="iraclientes()"> Ir a cliente</button> --> <button  (click)="iragastos()"> Gastos</button> </mat-toolbar>
 
-  <div>
-    <h2 align="center">Potencia consumida Watts por día {{ChangedFormat}}</h2>
-    <div align = 'center'>
-      <ngx-charts-bar-vertical
-        [view]="view"
-        [scheme]="colorSchemeMeas"
-        [results]="datameas"
-        [gradient]="false"
-        [xAxis]="showXAxis"
-        [yAxis]="showYAxis"
-        [legend]="showLegend"
-        [showXAxisLabel]="showXAxisLabel"
-        [showYAxisLabel]="true"
-        [xAxisLabel]="xAxisLabelMeas"
-        [yAxisLabel]="yAxisLabelMeas"
-        [showDataLabel]="false"
-        (select)="onSelect($event)">
-      </ngx-charts-bar-vertical>
+  <!-- Dashboard Container -->
+  <div class="dashboard-container">
+
+    <!-- CARD 1: Potencia consumida por día -->
+    <div class="dashboard-card">
+      <div class="card-header">
+        <h2 class="card-title">
+          ⚡ Potencia consumida Watts por día {{ChangedFormatDisplay}}
+          <span class="total-energia">(Total: {{formatearNumero(totalEnergiaDia)}} W)</span>
+          <span class="costo-energia">(Costo: ${{formatearNumero(costoDia)}})</span>
+        </h2>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <ngx-charts-bar-vertical
+            [view]="view"
+            [scheme]="colorSchemeMeas"
+            [results]="datameas"
+            [gradient]="false"
+            [xAxis]="showXAxis"
+            [yAxis]="showYAxis"
+            [legend]="showLegend"
+            [showXAxisLabel]="showXAxisLabel"
+            [showYAxisLabel]="true"
+            [xAxisLabel]="xAxisLabelMeas"
+            [yAxisLabel]="yAxisLabelMeas"
+            [showDataLabel]="false"
+            (select)="onSelect($event)">
+          </ngx-charts-bar-vertical>
+        </div>
+      </div>
     </div>
 
-
-    <div>
-      <h2 align="center">Energía consumida Watts por mes {{nombreMesActual}}</h2>
-      <div align = 'center'>
-        <ngx-charts-bar-vertical
-          [view]="view"
-          [scheme]="colorSchemeMeas"
-          [results]="datameasMes"
-          [gradient]="false"
-          [xAxis]="showXAxis"
-          [yAxis]="showYAxis"
-          [legend]="false"
-          [showXAxisLabel]="showXAxisLabel"
-          [showYAxisLabel]="true"
-          [xAxisLabel]="xAxisLabelMeas"
-          [yAxisLabel]="yAxisLabelMeas"
-          [showDataLabel]="true"
-          (select)="onSelect($event)">
-        </ngx-charts-bar-vertical>
+    <!-- CARD 2: Energía consumida por mes -->
+    <div class="dashboard-card">
+      <div class="card-header">
+        <h2 class="card-title">
+          📊 Energía consumida Watts por mes {{nombreMesActual}}
+          <span class="total-energia">(Total: {{formatearNumero(totalEnergiaMes)}} W)</span>
+          <span class="costo-energia">(Costo: ${{formatearNumero(costoMes)}})</span>
+        </h2>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <ngx-charts-bar-vertical
+            [view]="view"
+            [scheme]="colorSchemeMeas"
+            [results]="datameasMes"
+            [gradient]="false"
+            [xAxis]="showXAxis"
+            [yAxis]="showYAxis"
+            [legend]="false"
+            [showXAxisLabel]="showXAxisLabel"
+            [showYAxisLabel]="true"
+            [xAxisLabel]="xAxisLabelMeas"
+            [yAxisLabel]="yAxisLabelMeas"
+            [showDataLabel]="true"
+            [dataLabelFormatting]="formatearValorBarra"
+            (select)="onSelect($event)">
+          </ngx-charts-bar-vertical>
+        </div>
+      </div>
     </div>
 
-
-
-    <div>
-      <h2 align="center">Potencia consumida vs Generada Watts por día {{ChangedFormat}}</h2>
-      <div align = 'center'>
-      <ngx-charts-bar-vertical-2d
-        [view]="view"
-        [scheme]="colorScheme3"
-        [results]="datamultiMeas"
-        [gradient]="gradient"
-        [xAxis]="showXAxis2"
-        [yAxis]="showYAxis2"
-        [legend]="false"
-        [showXAxisLabel]="showXAxisLabel2"
-        [showYAxisLabel]="showYAxisLabel2"
-        [showDataLabel]=true
-        [xAxisLabel]="xAxisLabel2"
-        [yAxisLabel]="yAxisLabel2"
-        [legendTitle]="legendTitle2"
-        (select)="onSelect($event)"
-        (activate)="onActivate($event)"
-        (deactivate)="onDeactivate($event)">
-      </ngx-charts-bar-vertical-2d>
+    <!-- CARD 3: Potencia consumida vs Generada -->
+    <div class="dashboard-card">
+      <div class="card-header">
+        <h2 class="card-title">⚡🔋 Potencia consumida vs Generada Watts por día {{ChangedFormatDisplay}}</h2>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <ngx-charts-bar-vertical-2d
+            [view]="view"
+            [scheme]="colorScheme3"
+            [results]="datamultiMeas"
+            [gradient]="gradient"
+            [xAxis]="showXAxis2"
+            [yAxis]="showYAxis2"
+            [legend]="false"
+            [showXAxisLabel]="showXAxisLabel2"
+            [showYAxisLabel]="showYAxisLabel2"
+            [showDataLabel]=true
+            [xAxisLabel]="xAxisLabel2"
+            [yAxisLabel]="yAxisLabel2"
+            [legendTitle]="legendTitle2"
+            (select)="onSelect($event)"
+            (activate)="onActivate($event)"
+            (deactivate)="onDeactivate($event)">
+          </ngx-charts-bar-vertical-2d>
+        </div>
+      </div>
     </div>
 
+  </div>

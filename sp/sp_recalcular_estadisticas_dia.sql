@@ -19,18 +19,27 @@ recalculo_proc: BEGIN
         SET MESSAGE_TEXT = 'No se pueden calcular estadísticas de fechas futuras';
     END IF;
 
-    -- Si la fecha es anterior a hoy, verificar si ya existe el registro
+    -- Si la fecha es anterior a hoy (no es hoy), verificar si ya existe el registro
+    -- Para el día actual (hoy), siempre recalcular aunque exista registro
     IF p_fecha < CURDATE() THEN
         SELECT COUNT(*) INTO v_registro_existe
         FROM estadisticas_energia_dia
         WHERE nombrenodo = p_nodo
           AND fecha = p_fecha;
 
-        -- Si ya existe, no recalcular
+        -- Si ya existe registro y no es hoy, no recalcular
         IF v_registro_existe > 0 THEN
             -- Salir sin hacer nada
             LEAVE recalculo_proc;
         END IF;
+    END IF;
+    -- Si p_fecha = CURDATE() (es hoy), continuar con el recálculo sin verificar si existe
+    
+    -- Si es el día actual, eliminar el registro existente para forzar recálculo
+    IF p_fecha = CURDATE() THEN
+        DELETE FROM estadisticas_energia_dia
+        WHERE nombrenodo = p_nodo
+          AND fecha = p_fecha;
     END IF;
 
     -- Calcular promedio de energía del día (para futuro uso si lo necesitas)

@@ -137,18 +137,21 @@ export class IngresoventaComponent implements OnInit {
 
   calcularTotales(): void {
     let totalArticulos = 0;
-    let subtotalVenta = 0;
+    let totalImporte = 0; // Total con IVA incluido (precio de venta)
 
     this.detalles.controls.forEach(detalle => {
       const cantidad = detalle.get('cantidad')?.value || 0;
       const subtotal = detalle.get('preciosubtotal')?.value || 0;
 
       totalArticulos += Number(cantidad);
-      subtotalVenta += Number(subtotal);
+      totalImporte += Number(subtotal); // Suma de precios de venta (con IVA)
     });
 
-    const iva = subtotalVenta * 0.19; // 19% de IVA
-    const totalImporte = subtotalVenta + iva;
+    // El total ingresado ya incluye IVA (precio de venta al cliente)
+    // Subtotal = 81% del total (precio neto sin IVA)
+    // IVA = 19% del total
+    const subtotalVenta = totalImporte / 1.19; // Precio neto = Total / 1.19
+    const iva = totalImporte - subtotalVenta; // IVA = Total - Subtotal
 
     // Actualizar valores calculados (sin validaciones para estos campos)
     this.ventaForm.patchValue({
@@ -165,18 +168,21 @@ export class IngresoventaComponent implements OnInit {
     }, 0);
   }
 
-  getSubtotalVenta(): number {
+  getTotalImporte(): number {
+    // Total con IVA incluido (suma de precios de venta)
     return this.detalles.controls.reduce((total, detalle) => {
       return total + (Number(detalle.get('preciosubtotal')?.value) || 0);
     }, 0);
   }
 
-  getIVA(): number {
-    return this.getSubtotalVenta() * 0.19;
+  getSubtotalVenta(): number {
+    // Subtotal = 81% del total (precio neto sin IVA)
+    return this.getTotalImporte() / 1.19;
   }
 
-  getTotalImporte(): number {
-    return this.getSubtotalVenta() + this.getIVA();
+  getIVA(): number {
+    // IVA = 19% del total = Total - Subtotal
+    return this.getTotalImporte() - this.getSubtotalVenta();
   }
 
   async guardarVenta(): Promise<void> {
