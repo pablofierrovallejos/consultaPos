@@ -4,8 +4,9 @@
 
 export const environment = {
   production: false,
-  baseUrl: 'http://35.209.63.29:8001/api',  // Backend local (productos, energía, etc)
-  ventasUrl: 'http://35.209.63.29:8001/api' // Microservicio de inserción de ventas
+  baseUrl: '/api',  // Usa proxy en desarrollo (localhost:4200/api → localhost:8001/api)
+  ventasUrl: '/api', // Usa proxy en desarrollo
+  boletasUrl: '/api' // Usa proxy en desarrollo (localhost:4200/api → localhost:5000/api)
 };
 
 /*

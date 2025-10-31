@@ -42,6 +42,35 @@
   justify-content: center;
 }
 
+/* Contenedor para boleta emitida */
+.boleta-emitida {
+  display: flex;
+  flex-direction: row;  /* En fila horizontal */
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;  /* Permite ajuste si el espacio es limitado */
+}
+
+/* Contenedor para boleta pendiente */
+.boleta-pendiente {
+  display: flex;
+  flex-direction: row;  /* En fila, no en columna */
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* Info del folio */
+.folio-info {
+  font-size: 0.75em;
+  color: #666;
+  font-weight: 500;
+  background: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
 /* Botón Emitir */
 .btn-emitir {
   padding: 5px 12px;
@@ -64,6 +93,116 @@
 
 .btn-emitir:active {
   transform: translateY(0);
+}
+
+.btn-emitir:disabled {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: wait;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  transform: none;
+  opacity: 0.9;
+}
+
+/* Estilos para el contador de emisión */
+.emitiendo-texto {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.contador-emision {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.3);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.95em;
+  min-width: 30px;
+  text-align: center;
+}
+
+/* Animación de puntos suspensivos */
+.dots-animation {
+  display: inline-block;
+  animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0%, 20% {
+    content: '.';
+  }
+  40% {
+    content: '..';
+  }
+  60%, 100% {
+    content: '...';
+  }
+}
+
+/* Botón Ver Boleta */
+.btn-ver-boleta {
+  padding: 6px 12px;
+  margin-top: 2px;
+  background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-size: 0.8em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(67, 160, 71, 0.3);
+  min-width: 100px;
+}
+
+.btn-ver-boleta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(67, 160, 71, 0.5);
+  background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+}
+
+.btn-ver-boleta:active {
+  transform: translateY(0);
+}
+
+.btn-ver-boleta:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Botón Descargar (mantener para compatibilidad) */
+.btn-descargar {
+  padding: 6px 12px;
+  margin-top: 2px;
+  background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-size: 0.8em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(67, 160, 71, 0.3);
+  min-width: 120px;
+}
+
+.btn-descargar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(67, 160, 71, 0.5);
+  background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+}
+
+.btn-descargar:active {
+  transform: translateY(0);
+}
+
+.btn-descargar:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .styled-table tbody tr { border-bottom: 1px solid #dddddd; } .styled-table tbody tr:nth-of-type(even) { background-color: #f3f3f3; } .styled-table tbody tr:last-of-type { border-bottom: 2px solid #009879; }

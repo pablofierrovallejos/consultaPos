@@ -29,6 +29,7 @@ export class ApiService {
   //private baseUrl = "http://servicio-productos.ventas2.svc.cluster.local:8090" //esto no sirve
   private baseUrl = environment.baseUrl;    //Configuración parametrizable desde environment
   private ventasUrl = environment.ventasUrl;  //URL específica para microservicio de ventas
+  private boletasUrl = environment.boletasUrl;  //URL específica para microservicio de boletas
   //  API_URL: '${BACKEND_URL}${BACKEND_PORT}'
   ///const KEY = `${process.env.KEY_TO_READ}`;
   //private baseUrl = '${HOST_BACK}';
@@ -171,6 +172,40 @@ export class ApiService {
       .set('content-type', 'application/json');
     const options = { headers: headers };
     return this.http.post(this.baseUrl + '/productos/agregar-producto', producto, options);
+  }
+
+  // Método para emitir boleta con idventa
+  public emitirBoleta(idventa: number, monto: number, descripcion: string): Observable<any>{
+    const headers = new HttpHeaders()
+      .set('content-type', 'application/json');
+    const options = { headers: headers };
+    const body = { idventa, monto, descripcion };
+    return this.http.post(this.boletasUrl + '/emitir-boleta', body, options);
+  }
+
+  // Método para listar boletas emitidas
+  public listarBoletas(): Observable<any>{
+    return this.http.get(this.boletasUrl + '/boletas');
+  }
+
+  // Método para obtener boletas de una venta específica
+  public obtenerBoletasPorVenta(idventa: number): Observable<any>{
+    return this.http.get(`${this.boletasUrl}/boletas/consultavta/${idventa}`);
+  }
+
+  // Método para obtener información de una boleta específica
+  public obtenerBoleta(folio: string): Observable<any>{
+    return this.http.get(`${this.boletasUrl}/boleta/${folio}`);
+  }
+
+  // Método para descargar PDF de boleta desde BD
+  public descargarBoletaPDF(folio: string): Observable<Blob>{
+    return this.http.get(`${this.boletasUrl}/boleta/${folio}/pdf`, { responseType: 'blob' });
+  }
+
+  // Método para descargar PDF por nombre de archivo
+  public descargarBoletaArchivo(filename: string): Observable<Blob>{
+    return this.http.get(`${this.boletasUrl}/descargar-boleta/${filename}`, { responseType: 'blob' });
   }
 
 }

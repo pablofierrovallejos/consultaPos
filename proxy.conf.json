@@ -1,4 +1,34 @@
 {
+  "/api/emitir-boleta*": {
+    "target": "http://localhost:5000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/api/boletas/consultavta/*": {
+    "target": "http://localhost:5000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/api/boletas*": {
+    "target": "http://localhost:5000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/api/boleta/*": {
+    "target": "http://localhost:5000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/api/descargar-boleta/*": {
+    "target": "http://localhost:5000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
   "/api/energia/*": {
     "target": "http://localhost:8002",
     "secure": false,
@@ -9,7 +39,7 @@
     }
   },
   "/api/*": {
-    "target": "http://localhost:8001",
+    "target": "http://35.209.63.29:8001",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

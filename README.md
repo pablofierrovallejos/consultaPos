@@ -115,9 +115,9 @@ sudo docker run -d --name servicio-ng-front-vtas --network springcloud -p 8080:8
 ng build --configuration=production
 
 # 2. Construir nueva imagen Docker (v14 - Fix del proxy de energía)
-docker build -t servicio-ng-front-vtas:v14 .
-docker tag servicio-ng-front-vtas:v14 96552333aa/servicio-ng-front-vtas:v14
-docker push 96552333aa/servicio-ng-front-vtas:v14
+docker build -t servicio-ng-front-vtas:v16 .
+docker tag servicio-ng-front-vtas:v16 96552333aa/servicio-ng-front-vtas:v16
+docker push 96552333aa/servicio-ng-front-vtas:v16
 
 # 3. Asegurarse que los microservicios backend están corriendo Y en la red springcloud
 docker ps | grep -E "servicio-productos|ms-concentrador-energia"

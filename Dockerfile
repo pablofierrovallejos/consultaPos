@@ -1,5 +1,12 @@
 # Stage 1: Build
 FROM node:16-alpine AS build
+
+# Configurar zona horaria Santiago de Chile
+RUN apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/America/Santiago /etc/localtime && \
+    echo "America/Santiago" > /etc/timezone && \
+    apk del tzdata
+
 # Directorio donde se mantendran los archivos de la app
 WORKDIR /usr/src/app
 # Copiar el package.json y el package-lock en nuestro WORKDIR
@@ -13,6 +20,12 @@ RUN npm run build
 
 # Stage 2
 FROM nginx:1.17.1-alpine
+
+# Configurar zona horaria Santiago de Chile
+RUN apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/America/Santiago /etc/localtime && \
+    echo "America/Santiago" > /etc/timezone && \
+    apk del tzdata
 
 # Copiar desde la "Etapa" build el contenido de la carpeta build/
 # dentro del directorio indicado en nginx

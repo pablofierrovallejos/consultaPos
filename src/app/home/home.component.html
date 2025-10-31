@@ -113,7 +113,7 @@
               <th>idventa</th><th>fechaventa</th>
               <th class="col-items">Items</th><th>Subtotal</th>
               <th>iva</th><th>IMPORTE</th><th>tipopago</th>
-              <th>comisiontbk</th><th>estadotransbank</th>
+              <th>estadotransbank</th>
               <th>BOLETA</th>
             </tr>
           </thead>
@@ -127,13 +127,32 @@
               <td>{{item.iva}}</td>
               <td>{{item.totalimporte}}</td>
               <td>{{item.tipopago}}</td>
-              <td>{{item.comisiontbk}}</td>
               <td>{{item.estadotransbank}}</td>
               <td>
-                <span *ngIf="item.trazastattransbk === 'OK'" class="badge-boleta badge-emitido">Emitido OK</span>
-                <div *ngIf="item.trazastattransbk !== 'OK'" class="boleta-container">
+                <!-- Boleta ya emitida - mostrar botón para ver -->
+                <div *ngIf="item.trazastattransbk === 'EMITIDO' || item.boletaEmitida" class="boleta-emitida">
+                  <span *ngIf="item.numeroFolio" class="folio-info">Folio: {{item.numeroFolio}}</span>
+                  <button 
+                    class="btn-ver-boleta" 
+                    [disabled]="item.cargandoBoleta"
+                    (click)="verBoleta(item)">
+                    {{ item.cargandoBoleta ? 'Cargando...' : 'Ver Boleta' }}
+                  </button>
+                </div>
+
+                <!-- Boleta sin emitir - mostrar botón para emitir -->
+                <div *ngIf="item.trazastattransbk !== 'EMITIDO' && !item.boletaEmitida" class="boleta-pendiente">
                   <span class="badge-boleta badge-sin-emitir">Sin Emitir</span>
-                  <button class="btn-emitir" title="Funcionalidad en desarrollo">Emitir</button>
+                  <button 
+                    class="btn-emitir" 
+                    [disabled]="item.emitiendo"
+                    (click)="emitirBoleta(item, id)">
+                    <span *ngIf="!item.emitiendo">Emitir</span>
+                    <span *ngIf="item.emitiendo" class="emitiendo-texto">
+                      Emitiendo<span class="dots-animation">...</span>
+                      <span class="contador-emision">{{ item.contadorEmision }}s</span>
+                    </span>
+                  </button>
                 </div>
               </td>
             </tr>

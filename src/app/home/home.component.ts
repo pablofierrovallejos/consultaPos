@@ -194,7 +194,54 @@ export class HomeComponent {
     this.api.getVentasDia(this.changed).subscribe((data: any) => {
       this.dataconsultaventas = data;
       this.calcularTotales(); // Calcular totales después de recibir los datos
+      this.verificarBoletasEmitidas(); // Verificar estado de boletas
     });
+  }
+
+  // Método para verificar boletas emitidas
+  async verificarBoletasEmitidas(): Promise<void> {
+    if (!this.dataconsultaventas || this.dataconsultaventas.length === 0) {
+      return;
+    }
+
+    // Crear un array de promesas para consultar todas las boletas en paralelo
+    const promesas = this.dataconsultaventas.map(async (venta: any) => {
+      if (!venta.idcorrelativo) {
+        return;
+      }
+
+      try {
+        // Consultar boletas específicas de esta venta
+        const response: any = await this.api.obtenerBoletasPorVenta(venta.idcorrelativo).toPromise();
+        
+        // El microservicio retorna { success: true, boletas: [...], count: N }
+        if (response && response.success && response.boletas && response.boletas.length > 0) {
+          // Tomar la primera boleta (debería haber solo una por venta)
+          const boleta = response.boletas[0];
+          
+          // Actualizar estado de la venta
+          venta.trazastattransbk = 'EMITIDO';
+          venta.numeroFolio = boleta.folio || boleta.numero_folio || 'N/A';
+          venta.boletaEmitida = true;
+          
+          console.log(`Boleta encontrada para venta ${venta.idcorrelativo}: Folio ${venta.numeroFolio}`);
+        }
+      } catch (error: any) {
+        // Si no hay boleta o hay error, simplemente no hacemos nada
+        // La venta quedará como "Sin Emitir"
+        if (error.status !== 404) {
+          console.log(`No hay boleta para venta ${venta.idcorrelativo}`);
+        }
+      }
+    });
+
+    try {
+      // Esperar a que todas las consultas terminen
+      await Promise.all(promesas);
+      console.log('Verificación de boletas completada');
+    } catch (error: any) {
+      console.error('Error general al verificar boletas:', error);
+    }
   }
 
   // Método para calcular totales de ventas del día
@@ -320,7 +367,116 @@ export class HomeComponent {
 
     this.api.getVentasDia(this.changed).subscribe((data: any) => {
       this.dataconsultaventas = data;
+      this.calcularTotales(); // Calcular totales
+      this.verificarBoletasEmitidas(); // Verificar estado de boletas
     });
+  }
+
+  // Método para emitir boleta
+  async emitirBoleta(item: any, index: number): Promise<void> {
+    // Validar que tenga monto e idventa
+    if (!item.totalimporte || item.totalimporte <= 0) {
+      alert('El monto de la venta no es válido');
+      return;
+    }
+
+    if (!item.idcorrelativo) {
+      alert('No se encontró el ID de la venta');
+      return;
+    }
+
+    // Bloquear botón e iniciar contador
+    item.emitiendo = true;
+    item.contadorEmision = 15;
+
+    // Iniciar contador regresivo
+    const intervalo = setInterval(() => {
+      if (item.contadorEmision > 0) {
+        item.contadorEmision--;
+      }
+    }, 1000);
+
+    try {
+      // Llamar al servicio de emitir boleta con idventa
+      const response: any = await this.api.emitirBoleta(
+        item.idcorrelativo,  // ID correlativo de la venta
+        item.totalimporte,
+        `Venta #${item.idcorrelativo} - ${item.fechaventa}`
+      ).toPromise();
+
+      console.log('Respuesta emitir boleta:', response);
+
+      // Detener contador
+      clearInterval(intervalo);
+
+      // Extraer número de folio de la respuesta
+      const numeroFolio = response.folio || response.numero_folio || response.numeroFolio || 'N/A';
+
+      // Actualizar el estado en la vista
+      item.trazastattransbk = 'EMITIDO';  // Estado visual
+      item.numeroFolio = numeroFolio;     // Guardar folio para descarga
+      item.boletaEmitida = true;          // Flag para mostrar botón de descarga
+      item.emitiendo = false;
+      item.contadorEmision = 0;
+
+      // Actualizar la fila visualmente
+      this.dataconsultaventas[index] = { ...item };
+
+      // Ya no mostramos alert de confirmación
+
+    } catch (error: any) {
+      console.error('Error al emitir boleta:', error);
+      
+      // Detener contador en caso de error
+      clearInterval(intervalo);
+      
+      item.emitiendo = false;
+      item.contadorEmision = 0;
+      alert('Error al emitir boleta: ' + (error.error?.message || error.message || 'Error desconocido'));
+    }
+  }
+
+  // Método para ver boleta en ventana emergente
+  async verBoleta(item: any): Promise<void> {
+    if (!item.numeroFolio || item.numeroFolio === 'N/A') {
+      alert('No hay boleta disponible para visualizar');
+      return;
+    }
+
+    try {
+      // Mostrar indicador de carga
+      item.cargandoBoleta = true;
+
+      // Obtener PDF desde el servidor
+      const blob = await this.api.descargarBoletaPDF(item.numeroFolio).toPromise();
+      
+      if (!blob) {
+        throw new Error('No se pudo obtener el archivo PDF');
+      }
+
+      // Crear URL temporal para visualización
+      const url = window.URL.createObjectURL(blob);
+      
+      // Abrir en ventana emergente
+      const ventana = window.open(url, '_blank', 'width=800,height=600,toolbar=no,menubar=no,scrollbars=yes');
+      
+      if (!ventana) {
+        // Si el popup fue bloqueado, abrir en pestaña nueva
+        window.open(url, '_blank');
+      }
+      
+      // Limpiar URL después de un tiempo (dar tiempo para que se cargue)
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 5000);
+      
+      item.cargandoBoleta = false;
+
+    } catch (error: any) {
+      console.error('Error al visualizar boleta:', error);
+      item.cargandoBoleta = false;
+      alert('Error al visualizar boleta: ' + (error.error?.message || error.message || 'Error desconocido'));
+    }
   }
 
   SendDataonChangeProd(event: any) {
