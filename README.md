@@ -81,9 +81,9 @@ ng serve --port 4201	//ejecutar angular en un puerto determinado
 ng build --configuration=production
 
 ## Construir imagen Docker (incrementar versión)
-docker build -t servicio-ng-front-vtas:v14 .
-docker tag servicio-ng-front-vtas:v14 96552333aa/servicio-ng-front-vtas:v14
-docker push 96552333aa/servicio-ng-front-vtas:v14
+docker build -t servicio-ng-front-vtas:v16 .
+docker tag servicio-ng-front-vtas:v16 96552333aa/servicio-ng-front-vtas:v16
+docker push 96552333aa/servicio-ng-front-vtas:v16
 
 ## Ejecutar localmente para pruebas
 docker run -d -p 8080:80 servicio-ng-front-vtas:v14
@@ -106,7 +106,7 @@ ng serve --port 4200
 # Ejecutar con configuración específica
 ng serve --configuration=development
 
-sudo docker run -d --name servicio-ng-front-vtas --network springcloud -p 8080:80 --restart always 96552333aa/servicio-ng-front-vtas:v12
+sudo docker run -d --name servicio-ng-front-vtas --network springcloud -p 8080:80 --restart always 96552333aa/servicio-ng-front-vtas:v17
 
 
 
@@ -115,9 +115,9 @@ sudo docker run -d --name servicio-ng-front-vtas --network springcloud -p 8080:8
 ng build --configuration=production
 
 # 2. Construir nueva imagen Docker (v14 - Fix del proxy de energía)
-docker build -t servicio-ng-front-vtas:v16 .
-docker tag servicio-ng-front-vtas:v16 96552333aa/servicio-ng-front-vtas:v16
-docker push 96552333aa/servicio-ng-front-vtas:v16
+docker build -t servicio-ng-front-vtas:v17 .
+docker tag servicio-ng-front-vtas:v17 96552333aa/servicio-ng-front-vtas:v17
+docker push 96552333aa/servicio-ng-front-vtas:v17
 
 # 3. Asegurarse que los microservicios backend están corriendo Y en la red springcloud
 docker ps | grep -E "servicio-productos|ms-concentrador-energia"

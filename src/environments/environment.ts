@@ -6,7 +6,8 @@ export const environment = {
   production: false,
   baseUrl: '/api',  // Usa proxy en desarrollo (localhost:4200/api → localhost:8001/api)
   ventasUrl: '/api', // Usa proxy en desarrollo
-  boletasUrl: '/api' // Usa proxy en desarrollo (localhost:4200/api → localhost:5000/api)
+  boletasUrl: '/api', // Usa proxy en desarrollo (localhost:4200/api → localhost:5000/api)
+  notificacionesWsUrl: 'ws://localhost:5001/ws/notificaciones' // WebSocket de notificaciones en desarrollo
 };
 
 /*

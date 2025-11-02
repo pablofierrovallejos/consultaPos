@@ -6,6 +6,7 @@ import {FormGroup,FormControl,Validators,FormArray} from '@angular/forms';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import * as XLSX from 'xlsx';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-home',
@@ -170,14 +171,22 @@ export class HomeComponent {
   // ========== MÉTODOS PARA WEBSOCKET Y NOTIFICACIONES ==========
   
   conectarWebSocket(): void {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = 'localhost:5001'; // URL del microservicio de notificaciones
-    const url = `${protocol}//${host}/ws/notificaciones`;
+    // Usar URL del environment según el ambiente (dev o prod)
+    let wsUrl = environment.notificacionesWsUrl;
+    
+    // Si la URL es relativa (comienza con /), construir URL completa
+    if (wsUrl.startsWith('/')) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      // Usar host completo (incluye puerto si existe) para evitar mixed-port blocking
+      const host = window.location.host; // hostname:port
+      wsUrl = `${protocol}//${host}${wsUrl}`;
+    }
 
-    console.log('Conectando a WebSocket:', url);
+    console.log('Conectando a WebSocket:', wsUrl);
+    console.log('Environment:', environment.production ? 'Producción' : 'Desarrollo');
 
     try {
-      this.socket = new WebSocket(url);
+      this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = (event) => {
         console.log('✅ WebSocket conectado exitosamente');
@@ -186,10 +195,14 @@ export class HomeComponent {
       this.socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('📊 Mensaje recibido:', data);
+          console.log('📊 Mensaje recibido del WebSocket:', data);
+          console.log('Tipo de mensaje:', data.tipo);
           
           if (data.tipo === 'ventas') {
+            console.log('🎯 Es un mensaje de ventas, llamando a mostrarNotificacion...');
             this.mostrarNotificacion(data);
+          } else {
+            console.log('ℹ️ Mensaje ignorado, tipo:', data.tipo);
           }
         } catch (e) {
           console.error('Error al procesar mensaje:', e);
@@ -225,6 +238,8 @@ export class HomeComponent {
   }
 
   mostrarNotificacion(data: any): void {
+    console.log('📢 mostrarNotificacion llamado con:', data);
+    
     // Guardar datos de la notificación
     this.notificationData = {
       hora: new Date().toLocaleTimeString('es-CL'),
@@ -232,11 +247,14 @@ export class HomeComponent {
       montoTotal: data.total_monto || 0
     };
 
+    console.log('📊 notificationData:', this.notificationData);
+
     // Reproducir sonido
     this.reproducirSonido();
 
     // Mostrar notificación
     this.showNotification = true;
+    console.log('✅ showNotification establecido a:', this.showNotification);
 
     // Limpiar timeout anterior si existe
     if (this.notificationTimeout) {
@@ -247,6 +265,7 @@ export class HomeComponent {
     this.notificationTimeout = setTimeout(() => {
       this.showNotification = false;
       this.notificationData = null;
+      console.log('⏱️ Notificación ocultada por timeout');
     }, 5000);
 
     // Recargar datos del dashboard

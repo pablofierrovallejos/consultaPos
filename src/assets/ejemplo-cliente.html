@@ -87,7 +87,7 @@
         function conectar() {
             // Construir la URL del WebSocket
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const host = 'localhost:5001'; // Cambia esto si tu servidor está en otra dirección
+            const host = ' ms-notifica:5001'; // Cambia esto si tu servidor está en otra dirección
             const url = `${protocol}//${host}/ws/notificaciones`;
 
             agregarMensaje('Sistema', `Conectando a ${url}...`);

@@ -299,7 +299,10 @@
         <strong>Monto Total:</strong> {{formatearMonto(notificationData.montoTotal)}}
       </p>
     </div>
-    <button class="notification-close" (click)="showNotification = false">✕</button>
+    <div class="notification-image">
+      <img src="assets/laica.png" alt="Laica">
+    </div>
+    <button class="notification-close" (click)="showNotification = false; $event.stopPropagation()">✕</button>
   </div>
 </div>
 

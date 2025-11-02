@@ -64,3 +64,44 @@ mat-toolbar button.logout-btn:hover {
   border-color: rgba(244, 67, 54, 0.8);
 }
 
+/* ========================================
+   ESTILOS PARA NOTIFICACIONES WEBSOCKET
+   ======================================== */
+
+.notification-popup{position:fixed;bottom:-200px;right:30px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border-radius:15px;box-shadow:0 10px 40px rgba(0,0,0,.3);padding:20px;min-width:420px;max-width:500px;z-index:10000;opacity:0;transform:translateY(0);transition:all .5s cubic-bezier(.68,-.55,.265,1.55)}
+.notification-popup.show{bottom:30px;opacity:1;animation:slideUpBounce .6s ease-out}
+@keyframes slideUpBounce{0%{transform:translateY(300px);opacity:0}60%{transform:translateY(-10px);opacity:1}80%{transform:translateY(5px)}100%{transform:translateY(0)}}
+.notification-content{display:flex;align-items:flex-start;gap:15px;position:relative}
+.notification-icon{font-size:40px;animation:ringBell .8s ease-in-out;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+@keyframes ringBell{0%,100%{transform:rotate(0)}10%,30%,50%,70%{transform:rotate(-15deg)}20%,40%,60%,80%{transform:rotate(15deg)}90%{transform:rotate(-5deg)}}
+.notification-body{flex:1}
+.notification-title{margin:0 0 10px 0;font-size:18px;font-weight:700;text-shadow:2px 2px 4px rgba(0,0,0,.2)}
+.notification-text{margin:5px 0;font-size:14px;line-height:1.5}
+.notification-text strong{font-weight:600}
+.notification-image{margin-left:15px;display:flex;align-items:center;justify-content:center}
+.notification-image img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.5);box-shadow:0 2px 8px rgba(0,0,0,.2);animation:fadeInScale .5s ease-out}
+@keyframes fadeInScale{0%{opacity:0;transform:scale(.5)}100%{opacity:1;transform:scale(1)}}
+.notification-close{position:absolute;top:-5px;right:-5px;background:rgba(255,255,255,.3);border:none;color:white;width:25px;height:25px;border-radius:50%;cursor:pointer;font-size:16px;font-weight:bold;display:flex;align-items:center;justify-content:center;transition:all .3s ease}
+.notification-close:hover{background:rgba(255,255,255,.5);transform:scale(1.1)}
+.notification-popup.show::before{content:'';position:absolute;top:-3px;left:-3px;right:-3px;bottom:-3px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:18px;z-index:-1;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:.8;transform:scale(1.02)}}
+.audio-hint{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ff9800 0%,#ff5722 100%);color:white;padding:12px 20px;border-radius:30px;box-shadow:0 4px 15px rgba(255,152,0,.4);display:flex;align-items:center;gap:10px;z-index:9999;cursor:pointer;animation:bounceIn .6s ease-out,pulse-hint 2s ease-in-out infinite 1s;max-width:90%}
+.audio-hint:hover{transform:translateX(-50%) scale(1.05);box-shadow:0 6px 20px rgba(255,152,0,.6)}
+@keyframes bounceIn{0%{transform:translateX(-50%) translateY(-100px);opacity:0}60%{transform:translateX(-50%) translateY(10px);opacity:1}80%{transform:translateX(-50%) translateY(-5px)}100%{transform:translateX(-50%) translateY(0)}}
+@keyframes pulse-hint{0%,100%{box-shadow:0 4px 15px rgba(255,152,0,.4)}50%{box-shadow:0 6px 25px rgba(255,152,0,.8)}}
+.audio-hint-icon{font-size:24px;animation:shake .5s ease-in-out infinite alternate}
+@keyframes shake{0%{transform:rotate(-5deg)}100%{transform:rotate(5deg)}}
+.audio-hint-text{font-size:14px;font-weight:600;text-shadow:1px 1px 2px rgba(0,0,0,.2)}
+.audio-hint-close{background:rgba(255,255,255,.3);border:none;color:white;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:14px;font-weight:bold;display:flex;align-items:center;justify-content:center;transition:all .3s ease;margin-left:5px}
+.audio-hint-close:hover{background:rgba(255,255,255,.5);transform:scale(1.1)}
+@media (max-width:768px){
+.notification-popup{right:15px;left:15px;min-width:auto;max-width:calc(100% - 30px)}
+.notification-popup.show{bottom:20px}
+.notification-icon{font-size:30px}
+.notification-title{font-size:16px}
+.notification-text{font-size:13px}
+.notification-image img{width:60px;height:60px}
+.audio-hint{top:60px;padding:10px 15px;font-size:12px}
+.audio-hint-icon{font-size:20px}
+.audio-hint-text{font-size:12px}
+}
