@@ -25,6 +25,15 @@ export class HomeComponent {
   private readonly validPassword = 'hp';
   private readonly authCookieName = 'consultaPos_auth';
 
+  // Propiedades para notificaciones WebSocket
+  private socket: WebSocket | null = null;
+  showNotification: boolean = false;
+  notificationData: any = null;
+  private notificationTimeout: any = null;
+  private audioPreparado: boolean = false;
+  showAudioHint: boolean = true; // Mostrar hint de interacción
+  private sonidoReproduciendose: boolean = false; // Control para evitar sonidos múltiples
+
   dataProductos : any[] = [];
   dataventas : any[] = [];
   dataestadistica: any[] = [];
@@ -87,7 +96,13 @@ export class HomeComponent {
   ngOnInit(): void {
     if (this.isAuthenticated) {
       this.loadDashboardData();
+      this.conectarWebSocket();
+      this.prepararAudio();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.desconectarWebSocket();
   }
 
   // Método para verificar el estado de autenticación
@@ -151,6 +166,176 @@ export class HomeComponent {
   deleteCookie(name: string): void {
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
   }
+
+  // ========== MÉTODOS PARA WEBSOCKET Y NOTIFICACIONES ==========
+  
+  conectarWebSocket(): void {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = 'localhost:5001'; // URL del microservicio de notificaciones
+    const url = `${protocol}//${host}/ws/notificaciones`;
+
+    console.log('Conectando a WebSocket:', url);
+
+    try {
+      this.socket = new WebSocket(url);
+
+      this.socket.onopen = (event) => {
+        console.log('✅ WebSocket conectado exitosamente');
+      };
+
+      this.socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('📊 Mensaje recibido:', data);
+          
+          if (data.tipo === 'ventas') {
+            this.mostrarNotificacion(data);
+          }
+        } catch (e) {
+          console.error('Error al procesar mensaje:', e);
+        }
+      };
+
+      this.socket.onerror = (error) => {
+        console.error('❌ Error en WebSocket:', error);
+      };
+
+      this.socket.onclose = (event) => {
+        console.log('⚫ WebSocket desconectado');
+        this.socket = null;
+        // Intentar reconectar después de 5 segundos
+        setTimeout(() => {
+          if (this.isAuthenticated) {
+            console.log('Intentando reconectar...');
+            this.conectarWebSocket();
+          }
+        }, 5000);
+      };
+
+    } catch (error) {
+      console.error('Error al crear WebSocket:', error);
+    }
+  }
+
+  desconectarWebSocket(): void {
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
+    }
+  }
+
+  mostrarNotificacion(data: any): void {
+    // Guardar datos de la notificación
+    this.notificationData = {
+      hora: new Date().toLocaleTimeString('es-CL'),
+      totalTransacciones: data.total_transacciones || 0,
+      montoTotal: data.total_monto || 0
+    };
+
+    // Reproducir sonido
+    this.reproducirSonido();
+
+    // Mostrar notificación
+    this.showNotification = true;
+
+    // Limpiar timeout anterior si existe
+    if (this.notificationTimeout) {
+      clearTimeout(this.notificationTimeout);
+    }
+
+    // Ocultar después de 5 segundos
+    this.notificationTimeout = setTimeout(() => {
+      this.showNotification = false;
+      this.notificationData = null;
+    }, 5000);
+
+    // Recargar datos del dashboard
+    this.getVentasEstadistica();
+    this.getVentasDia();
+  }
+
+  reproducirSonido(): void {
+    // Evitar reproducir si ya hay un sonido reproduciéndose
+    if (this.sonidoReproduciendose) {
+      console.log('🔇 Sonido ya reproduciéndose, ignorando...');
+      return;
+    }
+
+    try {
+      this.sonidoReproduciendose = true;
+      
+      // Agregar timestamp para evitar caché del navegador
+      const timestamp = new Date().getTime();
+      const audio = new Audio(`assets/notification-bell.mp3?t=${timestamp}`);
+      audio.volume = 0.5; // Volumen al 50%
+      
+      console.log('🔊 Intentando reproducir sonido...');
+      
+      // Resetear el flag cuando termine el sonido
+      audio.onended = () => {
+        this.sonidoReproduciendose = false;
+        console.log('✅ Sonido finalizado');
+      };
+      
+      audio.play()
+        .then(() => {
+          console.log('✅ Sonido reproducido exitosamente');
+          // Por si acaso el evento onended no se dispara, resetear después de 2 segundos
+          setTimeout(() => {
+            this.sonidoReproduciendose = false;
+          }, 2000);
+        })
+        .catch(error => {
+          this.sonidoReproduciendose = false; // Resetear si falla
+          console.warn('⚠️ No se pudo reproducir el sonido:', error);
+          console.log('Esto puede ser normal si el usuario no ha interactuado con la página aún');
+        });
+    } catch (error) {
+      this.sonidoReproduciendose = false; // Resetear si hay error
+      console.error('❌ Error al crear el objeto Audio:', error);
+    }
+  }
+
+  // Preparar audio para evitar problemas con políticas de autoplay
+  prepararAudio(): void {
+    if (!this.audioPreparado) {
+      try {
+        // Crear un audio silencioso
+        const silentAudio = new Audio();
+        silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        silentAudio.volume = 0.01;
+        
+        // Función para habilitar audio con cualquier interacción
+        const habilitarAudio = () => {
+          if (!this.audioPreparado) {
+            silentAudio.play().then(() => {
+              this.audioPreparado = true;
+              this.showAudioHint = false; // Ocultar el hint
+              console.log('✅ Audio habilitado - las notificaciones sonarán');
+              // Remover listeners después de habilitar
+              document.removeEventListener('click', habilitarAudio);
+              document.removeEventListener('keydown', habilitarAudio);
+              document.removeEventListener('touchstart', habilitarAudio);
+            }).catch((error) => {
+              console.log('⚠️ Aún esperando interacción del usuario:', error.message);
+            });
+          }
+        };
+        
+        // Agregar múltiples eventos para capturar la primera interacción
+        document.addEventListener('click', habilitarAudio, { once: false });
+        document.addEventListener('keydown', habilitarAudio, { once: false });
+        document.addEventListener('touchstart', habilitarAudio, { once: false });
+        
+        console.log('🔊 Sistema de audio listo - haz clic en la página para habilitar sonidos');
+        
+      } catch (error) {
+        console.log('No se pudo preparar el audio:', error);
+      }
+    }
+  }
+
+  // ========== FIN MÉTODOS WEBSOCKET ==========
 
   // Método para validar datos del gráfico
   validateChartData(data: any[]): any[] {
