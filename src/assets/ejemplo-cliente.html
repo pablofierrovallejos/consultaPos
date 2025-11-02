@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cliente WebSocket - Ejemplo Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-connect { background: #4CAF50; color: white; }
+        .btn-disconnect { background: #f44336; color: white; }
+        .btn-connect:disabled, .btn-disconnect:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .connected { background: #dff0d8; color: #3c763d; }
+        .disconnected { background: #f2dede; color: #a94442; }
+        #messages {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: #fafafa;
+            border-radius: 5px;
+        }
+        .message {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-left: 4px solid #2196F3;
+            border-radius: 3px;
+        }
+        .message-time {
+            color: #999;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔔 Cliente WebSocket - MS Notifica</h1>
+        <p>Ejemplo simple de conexión al microservicio de notificaciones</p>
+    </div>
+
+    <div class="card">
+        <h2>Conexión</h2>
+        <div id="status" class="disconnected">⚫ Desconectado</div>
+        <button class="btn-connect" id="btnConnect" onclick="conectar()">Conectar</button>
+        <button class="btn-disconnect" id="btnDisconnect" onclick="desconectar()" disabled>Desconectar</button>
+        <button onclick="limpiarMensajes()">Limpiar</button>
+    </div>
+
+    <div class="card">
+        <h2>Mensajes Recibidos</h2>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        let socket = null;
+
+        function conectar() {
+            // Construir la URL del WebSocket
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = 'localhost:5001'; // Cambia esto si tu servidor está en otra dirección
+            const url = `${protocol}//${host}/ws/notificaciones`;
+
+            agregarMensaje('Sistema', `Conectando a ${url}...`);
+
+            try {
+                socket = new WebSocket(url);
+
+                socket.onopen = function(event) {
+                    actualizarEstado(true);
+                    agregarMensaje('Sistema', '✅ Conexión establecida exitosamente');
+                };
+
+                socket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        if (data.tipo === 'ventas') {
+                            const montoFormateado = new Intl.NumberFormat('es-CL', { 
+                                style: 'currency', 
+                                currency: 'CLP' 
+                            }).format(data.total_monto || 0);
+                            
+                            agregarMensaje('📊 Ventas', 
+                                `Total Transacciones: ${data.total_transacciones || 0}\n` +
+                                `Monto Total: ${montoFormateado}`
+                            );
+                            console.log('Datos de ventas:', data);
+                        } else {
+                            agregarMensaje(data.tipo || 'Mensaje', JSON.stringify(data, null, 2));
+                        }
+                    } catch (e) {
+                        agregarMensaje('Mensaje', event.data);
+                    }
+                };
+
+                socket.onerror = function(error) {
+                    agregarMensaje('Error', '❌ Error en la conexión WebSocket');
+                    console.error('WebSocket error:', error);
+                };
+
+                socket.onclose = function(event) {
+                    actualizarEstado(false);
+                    agregarMensaje('Sistema', '⚫ Conexión cerrada');
+                    socket = null;
+                };
+
+            } catch (error) {
+                agregarMensaje('Error', `❌ Error al crear WebSocket: ${error.message}`);
+            }
+        }
+
+        function desconectar() {
+            if (socket) {
+                socket.close();
+            }
+        }
+
+        function actualizarEstado(conectado) {
+            const status = document.getElementById('status');
+            const btnConnect = document.getElementById('btnConnect');
+            const btnDisconnect = document.getElementById('btnDisconnect');
+
+            if (conectado) {
+                status.textContent = '🟢 Conectado';
+                status.className = 'connected';
+                btnConnect.disabled = true;
+                btnDisconnect.disabled = false;
+            } else {
+                status.textContent = '⚫ Desconectado';
+                status.className = 'disconnected';
+                btnConnect.disabled = false;
+                btnDisconnect.disabled = true;
+            }
+        }
+
+        function agregarMensaje(tipo, contenido) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const ahora = new Date().toLocaleTimeString();
+            
+            messageDiv.innerHTML = `
+                <strong>${tipo}</strong> 
+                <span class="message-time">${ahora}</span><br>
+                <pre style="margin: 5px 0; white-space: pre-wrap;">${contenido}</pre>
+            `;
+            
+            messagesDiv.insertBefore(messageDiv, messagesDiv.firstChild);
+        }
+
+        function limpiarMensajes() {
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        // Información de uso
+        console.log('%c📡 WebSocket Client', 'color: blue; font-size: 20px; font-weight: bold;');
+        console.log('Para usar este cliente:');
+        console.log('1. Asegúrate de que el servidor esté corriendo (mvn quarkus:dev)');
+        console.log('2. Haz clic en "Conectar"');
+        console.log('3. Los mensajes aparecerán automáticamente cada segundo');
+        console.log('\nURL del WebSocket: ws://localhost:8080/ws/notificaciones');
+    </script>
+</body>
+</html>

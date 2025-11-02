@@ -17,7 +17,7 @@ export class EnergiaComponent {
   datamultiMeas: any[] = [];
   totalEnergiaMes: number = 0; // Total de energía consumida en el mes
   totalEnergiaDia: number = 0; // Total de energía consumida en el día
-  valorKilowatt: number = 236; // Valor por defecto del kilowatt
+  valorKilowatt: number = 284; // Valor por defecto del kilowatt
   costoDia: number = 0; // Costo total del día en pesos
   costoMes: number = 0; // Costo total del mes en pesos
 
@@ -44,12 +44,9 @@ export class EnergiaComponent {
                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     this.nombreMesActual = meses[this.changed.getMonth()];
 
-    // Obtener valor del kilowatt desde la configuración
+    // Obtener valor del kilowatt desde la configuración y LUEGO cargar datos
     this.cargarValorKilowatt();
 
-    this.llenarDataConsultaMeas(this.ChangedFormat);
-    this.llenarDataConsultaMeasMes(this.ChangedFormat);
-    this.llenarDataMeasMulti(this.ChangedFormat);
     console.log("ngOnInit(): " + this.ChangedFormat);
   }
 
@@ -118,18 +115,36 @@ export class EnergiaComponent {
 
   // Método para cargar el valor del kilowatt desde la configuración
   cargarValorKilowatt(): void {
+    // TODO: Descomentar cuando se implemente el endpoint en el backend
+    /*
     this.ApiService.obtenerConfiguracion('valorkilowatt').subscribe(
       (config: any) => {
         if (config && config.valor) {
           this.valorKilowatt = parseFloat(config.valor);
-          console.log('Valor kilowatt cargado:', this.valorKilowatt);
+          console.log('Valor kilowatt cargado desde BD:', this.valorKilowatt);
+        } else {
+          console.warn('No se encontró configuración, usando valor por defecto:', this.valorKilowatt);
         }
+        // Cargar los datos DESPUÉS de obtener el valor del kilowatt
+        this.llenarDataConsultaMeas(this.ChangedFormat);
+        this.llenarDataConsultaMeasMes(this.ChangedFormat);
+        this.llenarDataMeasMulti(this.ChangedFormat);
       },
       error => {
         console.error('Error al cargar valor kilowatt, usando valor por defecto:', error);
-        this.valorKilowatt = 180; // Valor por defecto
+        // Incluso en caso de error, cargar los datos con el valor por defecto
+        this.llenarDataConsultaMeas(this.ChangedFormat);
+        this.llenarDataConsultaMeasMes(this.ChangedFormat);
+        this.llenarDataMeasMulti(this.ChangedFormat);
       }
     );
+    */
+    
+    // Usar valor por defecto (236) hasta que se implemente el backend
+    console.log('Usando valor kilowatt por defecto:', this.valorKilowatt);
+    this.llenarDataConsultaMeas(this.ChangedFormat);
+    this.llenarDataConsultaMeasMes(this.ChangedFormat);
+    this.llenarDataMeasMulti(this.ChangedFormat);
   }
 
   // Helper method para validar y limpiar datos de gráficos
