@@ -213,4 +213,20 @@ export class ApiService {
     return this.http.get(`${this.baseUrl}/productos/configuracion/${clave}`);
   }
 
+  // Método para eliminar venta
+  public eliminarVenta(idcorrelativo: number): Observable<any>{
+    const headers = new HttpHeaders()
+      .set('content-type', 'application/json');
+    const options = { headers: headers };
+    return this.http.post(`${this.baseUrl}/productos/eliminar-venta/${idcorrelativo}`, {}, options);
+  }
+
+  // Método para registrar auditoría
+  public registrarAuditoria(auditoria: any): Observable<any>{
+    const headers = new HttpHeaders()
+      .set('content-type', 'application/json');
+    const options = { headers: headers };
+    return this.http.post(`${this.baseUrl}/productos/registrar-auditoria`, auditoria, options);
+  }
+
 }

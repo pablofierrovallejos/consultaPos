@@ -37,7 +37,94 @@ export class GastosComponent {
     this.updateGastosUrl();
 
     this.llenarDataConsultaCostos(this.ChangedFormat);
+    this.registrarAuditoriaConsultaGastos();
     console.log("ngOnInit(): " + this.ChangedFormat);
+  }
+
+  async registrarAuditoriaConsultaGastos(): Promise<void> {
+    try {
+      const geoData = await this.obtenerGeolocalizacion();
+      const auditoria = {
+        hostorigen: geoData.query || 'localhost',
+        modulo: '/gastos',
+        accionrealizada: 'Consulta Gastos',
+        usuario: 'hp',
+        detalles: `Acceso al módulo de gastos | Mes: ${this.nombreMesActual} | Precisión: ${geoData.precision}`,
+        dataprocesada: JSON.stringify({
+          fecha_acceso: new Date().toISOString(),
+          url: window.location.href,
+          mes_consulta: this.nombreMesActual,
+          fecha_consulta: this.ChangedFormat,
+          geolocalizacion: { precision: geoData.precision, isp: geoData.isp }
+        }),
+        latitud: geoData.lat || 0,
+        longitud: geoData.lon || 0,
+        ciudad: geoData.city || 'Desconocida',
+        region: geoData.regionName || 'Desconocida',
+        pais: geoData.country || 'Chile'
+      };
+      this.ApiService.registrarAuditoria(auditoria).subscribe(
+        () => console.log('✅ Auditoría gastos registrada'),
+        (error) => console.warn('⚠️ Error auditoría gastos:', error)
+      );
+    } catch (error) {
+      console.error('❌ Error auditoría gastos:', error);
+    }
+  }
+
+  async obtenerGeolocalizacion(): Promise<any> {
+    let geoData: any = {
+      query: 'localhost', lat: -33.4489, lon: -70.6693, city: 'Desconocida',
+      regionName: 'Desconocida', country: 'Chile', isp: 'Desconocido',
+      timezone: 'America/Santiago', precision: 'low'
+    };
+    try {
+      const posicion = await this.obtenerPosicionGPS();
+      if (posicion) {
+        geoData.lat = posicion.latitude;
+        geoData.lon = posicion.longitude;
+        geoData.accuracy = posicion.accuracy;
+        geoData.precision = posicion.accuracy < 100 ? 'high' : 'medium';
+      }
+      try {
+        const ipResponse = await fetch('https://ipapi.co/json/');
+        const ipData = await ipResponse.json();
+        if (ipData && !ipData.error) {
+          geoData.query = ipData.ip;
+          geoData.isp = ipData.org || 'Desconocido';
+          geoData.timezone = ipData.timezone || 'America/Santiago';
+          if (geoData.precision === 'low') {
+            geoData.lat = ipData.latitude;
+            geoData.lon = ipData.longitude;
+            geoData.city = ipData.city;
+            geoData.regionName = ipData.region;
+            geoData.country = ipData.country_name;
+            geoData.precision = 'ip-fallback';
+          }
+        }
+      } catch (e) { }
+      geoData.timestamp = new Date().toISOString();
+      geoData.userAgent = navigator.userAgent;
+      geoData.platform = navigator.platform;
+      return geoData;
+    } catch (error) {
+      return geoData;
+    }
+  }
+
+  private obtenerPosicionGPS(): Promise<any> {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) { resolve(null); return; }
+      const timeoutId = setTimeout(() => resolve(null), 10000);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          clearTimeout(timeoutId);
+          resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy });
+        },
+        () => { clearTimeout(timeoutId); resolve(null); },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    });
   }
 
   // Método para actualizar la URL de gastos con el mes actual

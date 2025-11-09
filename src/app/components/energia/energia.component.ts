@@ -47,7 +47,229 @@ export class EnergiaComponent {
     // Obtener valor del kilowatt desde la configuración y LUEGO cargar datos
     this.cargarValorKilowatt();
 
+    // Registrar auditoría de consulta del módulo energía
+    this.registrarAuditoriaConsultaEnergia();
+
     console.log("ngOnInit(): " + this.ChangedFormat);
+  }
+
+  // Método para registrar auditoría de consulta del módulo energía
+  async registrarAuditoriaConsultaEnergia(): Promise<void> {
+    try {
+      // Obtener geolocalización
+      const geoData = await this.obtenerGeolocalizacion();
+
+      // Preparar datos de auditoría
+      const auditoria = {
+        hostorigen: geoData.query || 'localhost',
+        modulo: '/energia',
+        accionrealizada: 'Consulta Energía',
+        usuario: 'hp', // Usuario por defecto (podrías obtenerlo del servicio de auth si existe)
+        detalles: `Acceso al módulo de energía | Precisión: ${geoData.precision} | ISP: ${geoData.isp} | Ciudad: ${geoData.city}`,
+        dataprocesada: JSON.stringify({
+          fecha_acceso: new Date().toISOString(),
+          url: window.location.href,
+          fecha_consulta: this.ChangedFormat,
+          mes_consulta: this.nombreMesActual,
+          geolocalizacion: {
+            precision: geoData.precision,
+            accuracy: geoData.accuracy,
+            address: geoData.address,
+            road: geoData.road,
+            neighbourhood: geoData.neighbourhood,
+            postcode: geoData.postcode,
+            isp: geoData.isp,
+            timezone: geoData.timezone,
+            userAgent: geoData.userAgent,
+            platform: geoData.platform,
+            timestamp: geoData.timestamp
+          }
+        }),
+        latitud: geoData.lat || 0,
+        longitud: geoData.lon || 0,
+        ciudad: geoData.city || 'Desconocida',
+        region: geoData.regionName || 'Desconocida',
+        pais: geoData.country || 'Chile'
+      };
+
+      // Registrar auditoría de forma asíncrona (no bloquear la carga)
+      this.ApiService.registrarAuditoria(auditoria).subscribe(
+        () => {
+          console.log('✅ Auditoría de consulta energía registrada');
+        },
+        (error) => {
+          console.warn('⚠️ No se pudo registrar auditoría de consulta energía:', error);
+        }
+      );
+
+    } catch (error) {
+      console.error('❌ Error al registrar auditoría de consulta energía:', error);
+    }
+  }
+
+  // Método para obtener geolocalización: GPS primero, fallback a IP si usuario rechaza
+  async obtenerGeolocalizacion(): Promise<any> {
+    let geoData: any = {
+      query: 'localhost',
+      lat: -33.4489,
+      lon: -70.6693,
+      city: 'Desconocida',
+      regionName: 'Desconocida',
+      country: 'Chile',
+      isp: 'Desconocido',
+      timezone: 'America/Santiago',
+      precision: 'low'
+    };
+
+    try {
+      // 1. INTENTAR GPS PRIMERO (si usuario acepta)
+      const posicion = await this.obtenerPosicionGPS();
+      if (posicion) {
+        geoData.lat = posicion.latitude;
+        geoData.lon = posicion.longitude;
+        geoData.accuracy = posicion.accuracy;
+        geoData.precision = posicion.accuracy < 100 ? 'high' : 'medium';
+        console.log('✅ Geolocalización GPS obtenida (usuario aceptó):', posicion);
+
+        // Hacer reverse geocoding para obtener dirección exacta
+        try {
+          const locationData = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${posicion.latitude}&lon=${posicion.longitude}&zoom=18&addressdetails=1`,
+            {
+              headers: {
+                'User-Agent': 'ConsultaPos/1.0'
+              }
+            }
+          );
+          const reverseGeo = await locationData.json();
+          
+          if (reverseGeo && reverseGeo.address) {
+            geoData.city = reverseGeo.address.city || reverseGeo.address.town || reverseGeo.address.municipality || 'Desconocida';
+            geoData.regionName = reverseGeo.address.state || reverseGeo.address.region || 'Desconocida';
+            geoData.country = reverseGeo.address.country || 'Chile';
+            geoData.address = reverseGeo.display_name;
+            geoData.postcode = reverseGeo.address.postcode;
+            geoData.road = reverseGeo.address.road;
+            geoData.neighbourhood = reverseGeo.address.neighbourhood;
+            console.log('✅ Dirección exacta obtenida:', reverseGeo.address);
+          }
+        } catch (geoError) {
+          console.warn('⚠️ No se pudo obtener dirección exacta:', geoError);
+        }
+      } else {
+        console.log('⚠️ GPS no disponible (usuario rechazó o no soportado), usando fallback IP...');
+      }
+
+      // 2. OBTENER INFORMACIÓN DE IP (siempre, para complementar o como fallback)
+      try {
+        const ipResponse = await fetch('https://ipapi.co/json/');
+        const ipData = await ipResponse.json();
+        
+        if (ipData && !ipData.error) {
+          geoData.query = ipData.ip;
+          geoData.isp = ipData.org || ipData.isp || 'Desconocido';
+          geoData.timezone = ipData.timezone || 'America/Santiago';
+          geoData.asn = ipData.asn;
+          
+          // Si NO se obtuvo GPS, usar datos de IP como principal
+          if (geoData.precision === 'low') {
+            geoData.lat = ipData.latitude;
+            geoData.lon = ipData.longitude;
+            geoData.city = ipData.city;
+            geoData.regionName = ipData.region;
+            geoData.country = ipData.country_name;
+            geoData.accuracy = 5000; // ~5km de precisión con IP
+            geoData.precision = 'ip-fallback';
+            console.log('📍 Usando geolocalización por IP (fallback):', ipData);
+          } else {
+            console.log('✅ Información de ISP/IP complementaria obtenida');
+          }
+        }
+      } catch (ipError) {
+        console.warn('⚠️ No se pudo obtener información de IP desde ipapi.co:', ipError);
+        
+        // Fallback final: solo obtener la IP
+        try {
+          const ipifyResponse = await fetch('https://api.ipify.org?format=json');
+          const ipifyData = await ipifyResponse.json();
+          geoData.query = ipifyData.ip;
+          console.log('✅ IP obtenida desde ipify (fallback final):', ipifyData.ip);
+        } catch (e) {
+          console.warn('⚠️ No se pudo obtener IP pública');
+        }
+      }
+
+      // 3. Agregar timestamp y metadata adicional
+      geoData.timestamp = new Date().toISOString();
+      geoData.userAgent = navigator.userAgent;
+      geoData.platform = navigator.platform;
+      geoData.language = navigator.language;
+      
+      console.log('📍 Geolocalización completa (método:', geoData.precision + '):', geoData);
+      return geoData;
+
+    } catch (error) {
+      console.error('❌ Error general al obtener geolocalización:', error);
+      return geoData; // Retornar datos por defecto
+    }
+  }
+
+  // Método auxiliar para obtener posición GPS del navegador (silencioso, sin toasts molestos)
+  private obtenerPosicionGPS(): Promise<any> {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        console.log('⚠️ Geolocalización no soportada por el navegador');
+        resolve(null);
+        return;
+      }
+
+      console.log('📍 Solicitando permiso de geolocalización al usuario...');
+
+      const timeoutId = setTimeout(() => {
+        console.log('⚠️ Timeout al obtener geolocalización GPS, usando fallback IP');
+        resolve(null);
+      }, 10000); // 10 segundos de timeout
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          clearTimeout(timeoutId);
+          console.log('✅ Usuario ACEPTÓ geolocalización - Precisión:', Math.round(position.coords.accuracy) + 'm');
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            altitude: position.coords.altitude,
+            altitudeAccuracy: position.coords.altitudeAccuracy,
+            heading: position.coords.heading,
+            speed: position.coords.speed,
+            timestamp: position.timestamp
+          });
+        },
+        (error) => {
+          clearTimeout(timeoutId);
+          
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              console.log('⚠️ Usuario RECHAZÓ geolocalización - usando fallback IP');
+              break;
+            case error.POSITION_UNAVAILABLE:
+              console.log('⚠️ Posición GPS no disponible - usando fallback IP');
+              break;
+            case error.TIMEOUT:
+              console.log('⚠️ Timeout GPS - usando fallback IP');
+              break;
+          }
+          
+          // Retornar null silenciosamente para usar fallback IP
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true, // Usar GPS si está disponible
+          timeout: 10000,
+          maximumAge: 0 // No usar caché
+        }
+      );
+    });
   }
 
      //Para el grafico de tortas

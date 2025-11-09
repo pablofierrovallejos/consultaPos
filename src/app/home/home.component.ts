@@ -7,11 +7,31 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import * as XLSX from 'xlsx';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
+import { trigger, transition, style, animate } from '@angular/animations';
+
+// Interfaz para Toast
+interface Toast {
+  id: number;
+  type: 'success' | 'error' | 'info' | 'warning';
+  title: string;
+  message: string;
+}
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
+  animations: [
+    trigger('slideIn', [
+      transition(':enter', [
+        style({ transform: 'translateX(100%)', opacity: 0 }),
+        animate('300ms ease-out', style({ transform: 'translateX(0)', opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('300ms ease-in', style({ transform: 'translateX(100%)', opacity: 0 }))
+      ])
+    ])
+  ]
 })
 export class HomeComponent {
 
@@ -34,6 +54,15 @@ export class HomeComponent {
   private audioPreparado: boolean = false;
   showAudioHint: boolean = true; // Mostrar hint de interacción
   private sonidoReproduciendose: boolean = false; // Control para evitar sonidos múltiples
+
+  // Propiedades para sistema de Toasts
+  toasts: Toast[] = [];
+  private toastIdCounter: number = 0;
+
+  // Propiedades para Modal de Confirmación
+  showConfirmModal: boolean = false;
+  confirmModalData: any = null;
+  private confirmCallback: (() => void) | null = null;
 
   dataProductos : any[] = [];
   dataventas : any[] = [];
@@ -119,6 +148,61 @@ export class HomeComponent {
     this.getVentasEstadistica();
     this.getVentasDia();
     this.getVentasEstadisticaProductos();
+    
+    // Registrar auditoría de consulta del home
+    this.registrarAuditoriaConsultaHome();
+  }
+
+  // Método para registrar auditoría de consulta del home
+  async registrarAuditoriaConsultaHome(): Promise<void> {
+    try {
+      // Obtener geolocalización
+      const geoData = await this.obtenerGeolocalizacion();
+
+      // Preparar datos de auditoría
+      const auditoria = {
+        hostorigen: geoData.query || 'localhost',
+        modulo: '/home',
+        accionrealizada: 'Consulta Home',
+        usuario: this.username || 'hp',
+        detalles: `Acceso al dashboard principal | Precisión: ${geoData.precision} | ISP: ${geoData.isp} | Ciudad: ${geoData.city}`,
+        dataprocesada: JSON.stringify({
+          fecha_acceso: new Date().toISOString(),
+          url: window.location.href,
+          geolocalizacion: {
+            precision: geoData.precision,
+            accuracy: geoData.accuracy,
+            address: geoData.address,
+            road: geoData.road,
+            neighbourhood: geoData.neighbourhood,
+            postcode: geoData.postcode,
+            isp: geoData.isp,
+            timezone: geoData.timezone,
+            userAgent: geoData.userAgent,
+            platform: geoData.platform,
+            timestamp: geoData.timestamp
+          }
+        }),
+        latitud: geoData.lat || 0,
+        longitud: geoData.lon || 0,
+        ciudad: geoData.city || 'Desconocida',
+        region: geoData.regionName || 'Desconocida',
+        pais: geoData.country || 'Chile'
+      };
+
+      // Registrar auditoría de forma asíncrona (no bloquear la carga del dashboard)
+      this.api.registrarAuditoria(auditoria).subscribe(
+        () => {
+          console.log('✅ Auditoría de consulta home registrada');
+        },
+        (error) => {
+          console.warn('⚠️ No se pudo registrar auditoría de consulta home:', error);
+        }
+      );
+
+    } catch (error) {
+      console.error('❌ Error al registrar auditoría de consulta home:', error);
+    }
   }
 
   // Método de login
@@ -580,12 +664,12 @@ export class HomeComponent {
   async emitirBoleta(item: any, index: number): Promise<void> {
     // Validar que tenga monto e idventa
     if (!item.totalimporte || item.totalimporte <= 0) {
-      alert('El monto de la venta no es válido');
+      this.showToast('error', 'Validación', 'El monto de la venta no es válido');
       return;
     }
 
     if (!item.idcorrelativo) {
-      alert('No se encontró el ID de la venta');
+      this.showToast('error', 'Validación', 'No se encontró el ID de la venta');
       return;
     }
 
@@ -636,14 +720,14 @@ export class HomeComponent {
       
       item.emitiendo = false;
       item.contadorEmision = 0;
-      alert('Error al emitir boleta: ' + (error.error?.message || error.message || 'Error desconocido'));
+      this.showToast('error', 'Error al Emitir Boleta', error.error?.message || error.message || 'Error desconocido');
     }
   }
 
   // Método para ver boleta en ventana emergente
   async verBoleta(item: any): Promise<void> {
     if (!item.numeroFolio || item.numeroFolio === 'N/A') {
-      alert('No hay boleta disponible para visualizar');
+      this.showToast('info', 'Información', 'No hay boleta disponible para visualizar');
       return;
     }
 
@@ -679,8 +763,258 @@ export class HomeComponent {
     } catch (error: any) {
       console.error('Error al visualizar boleta:', error);
       item.cargandoBoleta = false;
-      alert('Error al visualizar boleta: ' + (error.error?.message || error.message || 'Error desconocido'));
+      this.showToast('error', 'Error al Visualizar', error.error?.message || error.message || 'Error desconocido');
     }
+  }
+
+  // Método para eliminar venta
+  async eliminarVenta(item: any, index: number): Promise<void> {
+    // Validar que tenga idcorrelativo
+    if (!item.idcorrelativo) {
+      this.showToast('error', 'Error', 'No se encontró el ID correlativo de la venta');
+      return;
+    }
+
+    // Guardar referencia para usar en el callback
+    const itemToDelete = item;
+    const itemIndex = index;
+
+    // Mostrar modal de confirmación
+    this.confirmModalData = item;
+    this.showConfirmModal = true;
+    
+    // Definir callback de confirmación
+    this.confirmCallback = async () => {
+      try {
+        // Bloquear botón
+        itemToDelete.eliminando = true;
+
+        // Obtener geolocalización
+        const geoData = await this.obtenerGeolocalizacion();
+
+        // Llamar al endpoint de eliminación
+        await this.api.eliminarVenta(itemToDelete.idcorrelativo).toPromise();
+
+        // Preparar datos para auditoría
+        const dataProcesada = {
+          idcorrelativo: itemToDelete.idcorrelativo,
+          idventa: itemToDelete.idventa,
+          totalimporte: itemToDelete.totalimporte,
+          nroboleta: itemToDelete.nroboleta || 'N/A',
+          fechaventa: itemToDelete.fechaventa
+        };
+
+        const auditoria = {
+          hostorigen: geoData.query || 'localhost',
+          modulo: '/api/productos/eliminar-venta',
+          accionrealizada: 'Eliminación de venta',
+          usuario: this.username || 'admin',
+          detalles: `Eliminación lógica de venta #${itemToDelete.idcorrelativo} | Precisión: ${geoData.precision} | ISP: ${geoData.isp} | Exactitud: ${geoData.accuracy ? Math.round(geoData.accuracy) + 'm' : 'N/A'}`,
+          dataprocesada: JSON.stringify({
+            ...dataProcesada,
+            geolocalizacion: {
+              precision: geoData.precision,
+              accuracy: geoData.accuracy,
+              address: geoData.address,
+              road: geoData.road,
+              neighbourhood: geoData.neighbourhood,
+              postcode: geoData.postcode,
+              isp: geoData.isp,
+              timezone: geoData.timezone,
+              userAgent: geoData.userAgent,
+              platform: geoData.platform,
+              timestamp: geoData.timestamp
+            }
+          }),
+          latitud: geoData.lat || 0,
+          longitud: geoData.lon || 0,
+          ciudad: geoData.city || 'Desconocida',
+          region: geoData.regionName || 'Desconocida',
+          pais: geoData.country || 'Chile'
+        };
+
+        // Registrar auditoría
+        await this.api.registrarAuditoria(auditoria).toPromise();
+
+        // Mostrar toast de éxito
+        this.showToast('success', 'Venta Eliminada', 'La venta ha sido eliminada y registrada en auditoría');
+
+        // Recargar la página después de 1 segundo
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+
+      } catch (error: any) {
+        console.error('Error al eliminar venta:', error);
+        itemToDelete.eliminando = false;
+        this.showToast('error', 'Error al Eliminar', error.error?.message || error.message || 'Error desconocido');
+      }
+    };
+  }
+
+  // Método para obtener geolocalización: GPS primero, fallback a IP si usuario rechaza
+  async obtenerGeolocalizacion(): Promise<any> {
+    let geoData: any = {
+      query: 'localhost',
+      lat: -33.4489,
+      lon: -70.6693,
+      city: 'Desconocida',
+      regionName: 'Desconocida',
+      country: 'Chile',
+      isp: 'Desconocido',
+      timezone: 'America/Santiago',
+      precision: 'low'
+    };
+
+    try {
+      // 1. INTENTAR GPS PRIMERO (si usuario acepta)
+      const posicion = await this.obtenerPosicionGPS();
+      if (posicion) {
+        geoData.lat = posicion.latitude;
+        geoData.lon = posicion.longitude;
+        geoData.accuracy = posicion.accuracy;
+        geoData.precision = posicion.accuracy < 100 ? 'high' : 'medium';
+        console.log('✅ Geolocalización GPS obtenida (usuario aceptó):', posicion);
+
+        // Hacer reverse geocoding para obtener dirección exacta
+        try {
+          const locationData = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${posicion.latitude}&lon=${posicion.longitude}&zoom=18&addressdetails=1`,
+            {
+              headers: {
+                'User-Agent': 'ConsultaPos/1.0'
+              }
+            }
+          );
+          const reverseGeo = await locationData.json();
+          
+          if (reverseGeo && reverseGeo.address) {
+            geoData.city = reverseGeo.address.city || reverseGeo.address.town || reverseGeo.address.municipality || 'Desconocida';
+            geoData.regionName = reverseGeo.address.state || reverseGeo.address.region || 'Desconocida';
+            geoData.country = reverseGeo.address.country || 'Chile';
+            geoData.address = reverseGeo.display_name;
+            geoData.postcode = reverseGeo.address.postcode;
+            geoData.road = reverseGeo.address.road;
+            geoData.neighbourhood = reverseGeo.address.neighbourhood;
+            console.log('✅ Dirección exacta obtenida:', reverseGeo.address);
+          }
+        } catch (geoError) {
+          console.warn('⚠️ No se pudo obtener dirección exacta:', geoError);
+        }
+      } else {
+        console.log('⚠️ GPS no disponible (usuario rechazó o no soportado), usando fallback IP...');
+      }
+
+      // 2. OBTENER INFORMACIÓN DE IP (siempre, para complementar o como fallback)
+      try {
+        const ipResponse = await fetch('https://ipapi.co/json/');
+        const ipData = await ipResponse.json();
+        
+        if (ipData && !ipData.error) {
+          geoData.query = ipData.ip;
+          geoData.isp = ipData.org || ipData.isp || 'Desconocido';
+          geoData.timezone = ipData.timezone || 'America/Santiago';
+          geoData.asn = ipData.asn;
+          
+          // Si NO se obtuvo GPS, usar datos de IP como principal
+          if (geoData.precision === 'low') {
+            geoData.lat = ipData.latitude;
+            geoData.lon = ipData.longitude;
+            geoData.city = ipData.city;
+            geoData.regionName = ipData.region;
+            geoData.country = ipData.country_name;
+            geoData.accuracy = 5000; // ~5km de precisión con IP
+            geoData.precision = 'ip-fallback';
+            console.log('📍 Usando geolocalización por IP (fallback):', ipData);
+          } else {
+            console.log('✅ Información de ISP/IP complementaria obtenida');
+          }
+        }
+      } catch (ipError) {
+        console.warn('⚠️ No se pudo obtener información de IP desde ipapi.co:', ipError);
+        
+        // Fallback final: solo obtener la IP
+        try {
+          const ipifyResponse = await fetch('https://api.ipify.org?format=json');
+          const ipifyData = await ipifyResponse.json();
+          geoData.query = ipifyData.ip;
+          console.log('✅ IP obtenida desde ipify (fallback final):', ipifyData.ip);
+        } catch (e) {
+          console.warn('⚠️ No se pudo obtener IP pública');
+        }
+      }
+
+      // 3. Agregar timestamp y metadata adicional
+      geoData.timestamp = new Date().toISOString();
+      geoData.userAgent = navigator.userAgent;
+      geoData.platform = navigator.platform;
+      geoData.language = navigator.language;
+      
+      console.log('📍 Geolocalización completa (método:', geoData.precision + '):', geoData);
+      return geoData;
+
+    } catch (error) {
+      console.error('❌ Error general al obtener geolocalización:', error);
+      return geoData; // Retornar datos por defecto
+    }
+  }
+
+  // Método auxiliar para obtener posición GPS del navegador (silencioso, sin toasts molestos)
+  private obtenerPosicionGPS(): Promise<any> {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        console.log('⚠️ Geolocalización no soportada por el navegador');
+        resolve(null);
+        return;
+      }
+
+      console.log('📍 Solicitando permiso de geolocalización al usuario...');
+
+      const timeoutId = setTimeout(() => {
+        console.log('⚠️ Timeout al obtener geolocalización GPS, usando fallback IP');
+        resolve(null);
+      }, 10000); // 10 segundos de timeout
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          clearTimeout(timeoutId);
+          console.log('✅ Usuario ACEPTÓ geolocalización - Precisión:', Math.round(position.coords.accuracy) + 'm');
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            altitude: position.coords.altitude,
+            altitudeAccuracy: position.coords.altitudeAccuracy,
+            heading: position.coords.heading,
+            speed: position.coords.speed,
+            timestamp: position.timestamp
+          });
+        },
+        (error) => {
+          clearTimeout(timeoutId);
+          
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              console.log('⚠️ Usuario RECHAZÓ geolocalización - usando fallback IP');
+              break;
+            case error.POSITION_UNAVAILABLE:
+              console.log('⚠️ Posición GPS no disponible - usando fallback IP');
+              break;
+            case error.TIMEOUT:
+              console.log('⚠️ Timeout GPS - usando fallback IP');
+              break;
+          }
+          
+          // Retornar null silenciosamente para usar fallback IP
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true, // Usar GPS si está disponible
+          timeout: 10000,
+          maximumAge: 0 // No usar caché
+        }
+      );
+    });
   }
 
   SendDataonChangeProd(event: any) {
@@ -714,5 +1048,47 @@ export class HomeComponent {
 
   onDeactivate(event: any): void {
     console.log('Deactivate', event);
+  }
+
+  // ========== MÉTODOS PARA SISTEMA DE TOASTS ==========
+
+  showToast(type: 'success' | 'error' | 'info' | 'warning', title: string, message: string): void {
+    const toast: Toast = {
+      id: this.toastIdCounter++,
+      type,
+      title,
+      message
+    };
+
+    this.toasts.push(toast);
+
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+      this.removeToast(toast);
+    }, 5000);
+  }
+
+  removeToast(toast: Toast): void {
+    const index = this.toasts.findIndex(t => t.id === toast.id);
+    if (index > -1) {
+      this.toasts.splice(index, 1);
+    }
+  }
+
+  // ========== MÉTODOS PARA MODAL DE CONFIRMACIÓN ==========
+
+  confirmarAccion(): void {
+    this.showConfirmModal = false;
+    if (this.confirmCallback) {
+      this.confirmCallback();
+      this.confirmCallback = null;
+    }
+    this.confirmModalData = null;
+  }
+
+  cancelarAccion(): void {
+    this.showConfirmModal = false;
+    this.confirmCallback = null;
+    this.confirmModalData = null;
   }
 }
