@@ -1,6 +1,6 @@
 {
   "/api/ventas": {
-      "target": "http://35.209.63.29:8001",
+      "target": "http://localhost:8001",
       "secure": false,
       "changeOrigin": true,
       "logLevel": "debug",
@@ -9,7 +9,7 @@
       }
   },
   "/api": {
-      "target": "http://35.209.63.29:8001",
+      "target": "http://localhost:8001",
       "secure": false,
       "changeOrigin": true,
       "logLevel": "debug"

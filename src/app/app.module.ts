@@ -16,6 +16,7 @@ import { SpinnerComponent } from './spinner/spinner.component'; // Add this impo
 import { LoadingInterceptor } from './loading.interceptor';
 import { IngresoventaComponent } from './components/ingresoventa/ingresoventa.component';
 import { GastosComponent } from './components/gastos/gastos.component';
+import { ConciliacionComponent } from './components/conciliacion/conciliacion.component';
 
 
 @NgModule({
@@ -27,7 +28,8 @@ import { GastosComponent } from './components/gastos/gastos.component';
     ProductosComponent,
     SpinnerComponent,
     IngresoventaComponent,
-    GastosComponent
+    GastosComponent,
+    ConciliacionComponent
   ],
   imports: [
     BrowserModule,

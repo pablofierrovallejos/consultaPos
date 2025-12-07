@@ -1,36 +1,3 @@
-# ConsultaPost
-
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 16.0.4.
-
-## Módulos del Sistema
-
-### 📊 Dashboard (Home)
-- Visualización de estadísticas de ventas
-- Gráficos de ventas diarias y mensuales
-- Resumen de productos más vendidos
-- Sistema de autenticación (usuario: `hp` / contraseña: `hp`)
-
-### 💰 Ingreso de Ventas
-- Formulario para ingreso manual de ventas
-- Gestión de productos y cantidades
-- Cálculo automático de totales e IVA
-- **Documentación:** Ver [INGRESO-VENTAS.md](./INGRESO-VENTAS.md)
-
-### 📦 Productos
-- Gestión de catálogo de productos
-- Consulta de stock y precios
-
-### ⚡ Energía
-- Consulta de consumo eléctrico
-- Gráficos de consumo por medidor
-
-### 👥 Clientes
-- Gestión de clientes
-- Historial de compras
-
-### 💳 Gastos
-- Registro de gastos operacionales
-- Integración via iframe
 
 ## Development server
 

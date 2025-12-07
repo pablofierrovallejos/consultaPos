@@ -6,6 +6,7 @@ import { EnergiaComponent } from './components/energia/energia.component'; // Ad
 import { ProductosComponent } from './components/productos/productos.component'; // Add this import
 import { IngresoventaComponent } from './components/ingresoventa/ingresoventa.component'; // Add this import
 import { GastosComponent } from './components/gastos/gastos.component'; // Add this import
+import { ConciliacionComponent } from './components/conciliacion/conciliacion.component'; // Add this import
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: '', component: HomeComponent },
@@ -14,6 +15,7 @@ const routes: Routes = [
   { path: 'productos', component: ProductosComponent },
   { path: 'ingresoventa', component: IngresoventaComponent },
   { path: 'gastos', component: GastosComponent },
+  { path: 'conciliacion', component: ConciliacionComponent },
 ];
 
 @NgModule({

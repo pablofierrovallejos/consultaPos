@@ -619,6 +619,10 @@ export class HomeComponent {
     this.router.navigate(['/gastos']);
   }
 
+  iraconciliacion(){
+    this.router.navigate(['/conciliacion']);
+  }
+
   mesAnterior(){
     this.fecha.setMonth(this.fecha.getMonth()-1);
     this.getVentasEstadistica();

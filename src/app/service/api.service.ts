@@ -48,6 +48,7 @@ export class ApiService {
   private urlconsultaImagenCliente = this.baseUrl +'/productos/consultar-imagencli';
 
   private urlconsultaCostos = this.baseUrl +'/productos/consultar-costos/';
+  private urlAbonosTransbank = this.baseUrl +'/abonos/transbank/';
   private urlagregarCostos = this.baseUrl +'/productos/agregar-costos';
   private urlactualizarCostos = this.baseUrl +'/productos/actualizar-costo';
 
@@ -227,6 +228,11 @@ export class ApiService {
       .set('content-type', 'application/json');
     const options = { headers: headers };
     return this.http.post(`${this.baseUrl}/productos/registrar-auditoria`, auditoria, options);
+  }
+
+  // Método para obtener abonos de Transbank
+  getAbonosTransbank(mes: string): Observable<any> {
+    return this.http.get(this.urlAbonosTransbank + mes);
   }
 
 }

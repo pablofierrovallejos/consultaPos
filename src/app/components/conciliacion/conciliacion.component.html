@@ -1,0 +1,164 @@
+<mat-toolbar color="primary">
+  <span>Bienvenido | </span>
+  <button  (click)="iraproductos()"> Productos </button>   |
+  <button  (click)="iraventas()"> Ventas </button> |
+  <button  (click)="iraenergia()"> Energía</button>  |
+  <button  (click)="iragastos()"> Gastos</button> |
+  <button  (click)="iraconciliacion()"> Conciliación</button>
+</mat-toolbar>
+
+<div class="container">
+  <div class="header-section">
+    <h1>Conciliación - Abonos Transbank</h1>
+    <div class="month-navigation">
+      <button class="btn-month" (click)="mesAnterior()">
+        <mat-icon>chevron_left</mat-icon>
+        Mes Anterior
+      </button>
+      <span class="current-month">{{ mesActualTexto }}</span>
+      <button class="btn-month" (click)="mesSiguiente()">
+        Mes Siguiente
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Indicador de carga -->
+  <div *ngIf="cargando" class="loading">
+    <div class="spinner"></div>
+    <p>Cargando datos de conciliación...</p>
+  </div>
+
+  <!-- Mensaje de error -->
+  <div *ngIf="error" class="error-message">
+    <mat-icon>error</mat-icon>
+    <p>{{ error }}</p>
+    <button (click)="cargarAbonosTransbank()" class="btn-retry">Reintentar</button>
+  </div>
+
+  <!-- Gráfico de barras -->
+  <div *ngIf="!cargando && !error && abonosTransbank.length > 0" class="chart-container">
+    <h2>Total de Abonos por Fecha</h2>
+    <ngx-charts-bar-vertical
+      [view]="[1200, 400]"
+      [results]="chartData"
+      [xAxis]="true"
+      [yAxis]="true"
+      [legend]="false"
+      [showXAxisLabel]="true"
+      [showYAxisLabel]="true"
+      [showDataLabel]="true"
+      xAxisLabel="Fecha"
+      yAxisLabel="Total Abonos ($)"
+      [gradient]="false"
+      [scheme]="colorScheme">
+    </ngx-charts-bar-vertical>
+  </div>
+
+  <!-- Tabla de abonos -->
+  <div *ngIf="!cargando && !error && abonosTransbank.length > 0" class="table-container">
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Fecha Abono</th>
+          <th>Monto Venta</th>
+          <th>Comisiones</th>
+          <th>IVA Comisiones</th>
+          <th>Devolución Comisiones</th>
+          <th>IVA Devolución</th>
+          <th>Monto Anulaciones</th>
+          <th>Monto Cobros</th>
+          <th>IVA Cobros</th>
+          <th>Total Abonos</th>
+          <th>Fecha Procesamiento</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let abono of abonosTransbank">
+          <td>{{ abono.id }}</td>
+          <td>{{ abono.fechaAbono | date:'dd/MM/yyyy' }}</td>
+          <td class="monto">${{ formatearMonto(abono.montoVenta) }}</td>
+          <td>${{ formatearMonto(abono.comisiones) }}</td>
+          <td>${{ formatearMonto(abono.ivaComisiones) }}</td>
+          <td>${{ formatearMonto(abono.devolucionComisiones) }}</td>
+          <td>${{ formatearMonto(abono.ivaDevolucion) }}</td>
+          <td>${{ formatearMonto(abono.montoAnulaciones) }}</td>
+          <td>${{ formatearMonto(abono.montoCobros) }}</td>
+          <td>${{ formatearMonto(abono.ivaCobros) }}</td>
+          <td class="monto">${{ formatearMonto(abono.totalAbonos) }}</td>
+          <td>{{ abono.fechaProcesamiento | date:'dd/MM/yyyy HH:mm' }}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td colspan="2"><strong>TOTALES:</strong></td>
+          <td class="monto"><strong>${{ formatearMonto(calcularTotalColumna('montoVenta')) }}</strong></td>
+          <td><strong>${{ formatearMonto(calcularTotalColumna('comisiones')) }}</strong></td>
+          <td><strong>${{ formatearMonto(calcularTotalColumna('ivaComisiones')) }}</strong></td>
+          <td><strong>${{ formatearMonto(calcularTotalColumna('devolucionComisiones')) }}</strong></td>
+          <td><strong>${{ formatearMonto(calcularTotalColumna('ivaDevolucion')) }}</strong></td>
+          <td><strong>${{ formatearMonto(calcularTotalColumna('montoAnulaciones')) }}</strong></td>
+          <td><strong>${{ formatearMonto(calcularTotalColumna('montoCobros')) }}</strong></td>
+          <td><strong>${{ formatearMonto(calcularTotalColumna('ivaCobros')) }}</strong></td>
+          <td class="monto"><strong>${{ formatearMonto(calcularTotalColumna('totalAbonos')) }}</strong></td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+    
+    <!-- Sumatoria mensual -->
+    <div class="total-mensual">
+      <div class="total-item total-left">
+        <strong>Total Monto Venta del Mes:</strong>
+        <span class="monto-total">${{ formatearMonto(calcularTotalMontoVenta()) }}</span>
+      </div>
+      <div class="total-item total-center">
+        <strong>Total Abonos del Mes:</strong>
+        <span class="monto-total">${{ formatearMonto(calcularTotalMensual()) }}</span>
+      </div>
+      <div class="total-item total-right">
+        <strong>Total Cobro Transbank:</strong>
+        <span class="monto-total cobro-transbank">${{ formatearMonto(calcularTotalCobroTransbank()) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico de torta -->
+  <div *ngIf="!cargando && !error && abonosTransbank.length > 0" class="chart-container">
+    <h2>Distribución: Ventas vs Cobros Transbank</h2>
+    <div class="pie-chart-wrapper">
+      <div class="pie-percentages">
+        <div class="percentage-overlay">
+          <div class="percent-item percent-top">{{ pieChartData[1]?.extra }}%</div>
+          <div class="percent-item percent-bottom">{{ pieChartData[0]?.extra }}%</div>
+        </div>
+      </div>
+      <ngx-charts-pie-chart
+      [view]="[600, 400]"
+      [results]="pieChartData"
+      [legend]="true"
+      [legendPosition]="legendPosition"
+      [labels]="false"
+      [doughnut]="false"
+      [arcWidth]="0.25"
+      [scheme]="pieColorScheme"
+      [gradient]="true"
+      [tooltipDisabled]="false">
+      <ng-template #tooltipTemplate let-model="model">
+        <div style="padding: 10px; background: rgba(0,0,0,0.8); color: white; border-radius: 4px;">
+          <strong>{{ model.name }}</strong><br/>
+          ${{ formatearMonto(model.value) }}<br/>
+          {{ model.extra }}%
+        </div>
+      </ng-template>
+    </ngx-charts-pie-chart>
+    </div>
+  </div>
+
+  <!-- Mensaje cuando no hay datos -->
+  <div *ngIf="!cargando && !error && abonosTransbank.length === 0" class="no-data">
+    <mat-icon>info</mat-icon>
+    <p>No hay abonos de Transbank registrados</p>
+  </div>
+</div>
