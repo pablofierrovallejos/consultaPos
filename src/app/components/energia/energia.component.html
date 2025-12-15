@@ -7,7 +7,14 @@
   <!-- Medidores de Power en tiempo real -->
   <div class="power-gauges-container">
     <div class="power-header">
-      <h2 class="section-title">⚡ Power en Tiempo Real (Watts) - Última Medición</h2>
+      <h2 class="section-title">
+        ⚡ Power en Tiempo Real (Watts) - Última Medición
+        <span class="ws-indicator" [class.ws-connected]="wsConnected" [class.ws-error]="wsError">
+          <span *ngIf="wsConnected">🟢 WebSocket Activo</span>
+          <span *ngIf="!wsConnected && !wsError">🟡 Conectando...</span>
+          <span *ngIf="wsError">🔴 Sin conexión</span>
+        </span>
+      </h2>
       <div class="node-selector-inline">
         <span class="selector-label">Nodo:</span>
         <div class="node-buttons">
@@ -75,8 +82,7 @@
             [xAxisLabel]="xAxisLabelMeas"
             [yAxisLabel]="yAxisLabelMeas"
             [showDataLabel]="false"
-            [animations]="false"
-            (select)="onSelect($event)">
+            [animations]="false">
           </ngx-charts-bar-vertical>
         </div>
       </div>
@@ -107,8 +113,7 @@
             [yAxisLabel]="yAxisLabelMeas"
             [showDataLabel]="true"
             [dataLabelFormatting]="formatearValorBarra"
-            [animations]="false"
-            (select)="onSelect($event)">
+            [animations]="false">
           </ngx-charts-bar-vertical>
         </div>
       </div>
@@ -135,10 +140,7 @@
             [xAxisLabel]="xAxisLabel2"
             [yAxisLabel]="yAxisLabel2"
             [legendTitle]="legendTitle2"
-            [animations]="false"
-            (select)="onSelect($event)"
-            (activate)="onActivate($event)"
-            (deactivate)="onDeactivate($event)">
+            [animations]="false">
           </ngx-charts-bar-vertical-2d>
         </div>
       </div>

@@ -1,19 +1,29 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { Color, ScaleType } from '@swimlane/ngx-charts';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../service/api.service';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { Client } from '@stomp/stompjs';
+import * as SockJS from 'sockjs-client';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-energia',
   templateUrl: './energia.component.html',
-  styleUrls: ['./energia.component.css', './energia-gauge-styles.css']
+  styleUrls: ['./energia.component.css', './energia-gauge-styles.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EnergiaComponent implements OnDestroy {
   private destroy$ = new Subject<void>();
   private isLoadingPower = false; // Bandera para evitar llamadas simultáneas
+  private readonly MAX_DATA_POINTS = 100; // Límite máximo de datos para gráficos
+  
+  // WebSocket
+  private stompClient: Client | null = null;
+  wsConnected = false;
+  wsError = false;
   
   ChangedFormat='';
   ChangedFormatDisplay=''; // Formato DD-MM-YY para mostrar en headers
@@ -52,7 +62,11 @@ export class EnergiaComponent implements OnDestroy {
 
 
 
-  constructor(private ApiService: ApiService, private router: Router) {
+  constructor(
+    private ApiService: ApiService, 
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {
   }
 
   ngOnInit(): void{
@@ -67,231 +81,14 @@ export class EnergiaComponent implements OnDestroy {
 
     // Obtener valor del kilowatt desde la configuración y LUEGO cargar datos
     this.cargarValorKilowatt();
-
-    // Registrar auditoría de consulta del módulo energía
-    this.registrarAuditoriaConsultaEnergia();
+    
+    // Inicializar WebSocket después de cargar datos iniciales
+    setTimeout(() => this.initWebSocket(), 2000);
 
     console.log("ngOnInit(): " + this.ChangedFormat);
   }
 
-  // Método para registrar auditoría de consulta del módulo energía
-  async registrarAuditoriaConsultaEnergia(): Promise<void> {
-    try {
-      // Obtener geolocalización
-      const geoData = await this.obtenerGeolocalizacion();
 
-      // Preparar datos de auditoría
-      const auditoria = {
-        hostorigen: geoData.query || 'localhost',
-        modulo: '/energia',
-        accionrealizada: 'Consulta Energía',
-        usuario: 'hp', // Usuario por defecto (podrías obtenerlo del servicio de auth si existe)
-        detalles: `Acceso al módulo de energía | Precisión: ${geoData.precision} | ISP: ${geoData.isp} | Ciudad: ${geoData.city}`,
-        dataprocesada: JSON.stringify({
-          fecha_acceso: new Date().toISOString(),
-          url: window.location.href,
-          fecha_consulta: this.ChangedFormat,
-          mes_consulta: this.nombreMesActual,
-          geolocalizacion: {
-            precision: geoData.precision,
-            accuracy: geoData.accuracy,
-            address: geoData.address,
-            road: geoData.road,
-            neighbourhood: geoData.neighbourhood,
-            postcode: geoData.postcode,
-            isp: geoData.isp,
-            timezone: geoData.timezone,
-            userAgent: geoData.userAgent,
-            platform: geoData.platform,
-            timestamp: geoData.timestamp
-          }
-        }),
-        latitud: geoData.lat || 0,
-        longitud: geoData.lon || 0,
-        ciudad: geoData.city || 'Desconocida',
-        region: geoData.regionName || 'Desconocida',
-        pais: geoData.country || 'Chile'
-      };
-
-      // Registrar auditoría de forma asíncrona (no bloquear la carga)
-      this.ApiService.registrarAuditoria(auditoria).subscribe(
-        () => {
-          console.log('✅ Auditoría de consulta energía registrada');
-        },
-        (error) => {
-          console.warn('⚠️ No se pudo registrar auditoría de consulta energía:', error);
-        }
-      );
-
-    } catch (error) {
-      console.error('❌ Error al registrar auditoría de consulta energía:', error);
-    }
-  }
-
-  // Método para obtener geolocalización: GPS primero, fallback a IP si usuario rechaza
-  async obtenerGeolocalizacion(): Promise<any> {
-    let geoData: any = {
-      query: 'localhost',
-      lat: -33.4489,
-      lon: -70.6693,
-      city: 'Desconocida',
-      regionName: 'Desconocida',
-      country: 'Chile',
-      isp: 'Desconocido',
-      timezone: 'America/Santiago',
-      precision: 'low'
-    };
-
-    try {
-      // 1. INTENTAR GPS PRIMERO (si usuario acepta)
-      const posicion = await this.obtenerPosicionGPS();
-      if (posicion) {
-        geoData.lat = posicion.latitude;
-        geoData.lon = posicion.longitude;
-        geoData.accuracy = posicion.accuracy;
-        geoData.precision = posicion.accuracy < 100 ? 'high' : 'medium';
-        console.log('✅ Geolocalización GPS obtenida (usuario aceptó):', posicion);
-
-        // Hacer reverse geocoding para obtener dirección exacta
-        try {
-          const locationData = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${posicion.latitude}&lon=${posicion.longitude}&zoom=18&addressdetails=1`,
-            {
-              headers: {
-                'User-Agent': 'ConsultaPos/1.0'
-              }
-            }
-          );
-          const reverseGeo = await locationData.json();
-          
-          if (reverseGeo && reverseGeo.address) {
-            geoData.city = reverseGeo.address.city || reverseGeo.address.town || reverseGeo.address.municipality || 'Desconocida';
-            geoData.regionName = reverseGeo.address.state || reverseGeo.address.region || 'Desconocida';
-            geoData.country = reverseGeo.address.country || 'Chile';
-            geoData.address = reverseGeo.display_name;
-            geoData.postcode = reverseGeo.address.postcode;
-            geoData.road = reverseGeo.address.road;
-            geoData.neighbourhood = reverseGeo.address.neighbourhood;
-            console.log('✅ Dirección exacta obtenida:', reverseGeo.address);
-          }
-        } catch (geoError) {
-          console.warn('⚠️ No se pudo obtener dirección exacta:', geoError);
-        }
-      } else {
-        console.log('⚠️ GPS no disponible (usuario rechazó o no soportado), usando fallback IP...');
-      }
-
-      // 2. OBTENER INFORMACIÓN DE IP (siempre, para complementar o como fallback)
-      try {
-        const ipResponse = await fetch('https://ipapi.co/json/');
-        const ipData = await ipResponse.json();
-        
-        if (ipData && !ipData.error) {
-          geoData.query = ipData.ip;
-          geoData.isp = ipData.org || ipData.isp || 'Desconocido';
-          geoData.timezone = ipData.timezone || 'America/Santiago';
-          geoData.asn = ipData.asn;
-          
-          // Si NO se obtuvo GPS, usar datos de IP como principal
-          if (geoData.precision === 'low') {
-            geoData.lat = ipData.latitude;
-            geoData.lon = ipData.longitude;
-            geoData.city = ipData.city;
-            geoData.regionName = ipData.region;
-            geoData.country = ipData.country_name;
-            geoData.accuracy = 5000; // ~5km de precisión con IP
-            geoData.precision = 'ip-fallback';
-            console.log('📍 Usando geolocalización por IP (fallback):', ipData);
-          } else {
-            console.log('✅ Información de ISP/IP complementaria obtenida');
-          }
-        }
-      } catch (ipError) {
-        console.warn('⚠️ No se pudo obtener información de IP desde ipapi.co:', ipError);
-        
-        // Fallback final: solo obtener la IP
-        try {
-          const ipifyResponse = await fetch('https://api.ipify.org?format=json');
-          const ipifyData = await ipifyResponse.json();
-          geoData.query = ipifyData.ip;
-          console.log('✅ IP obtenida desde ipify (fallback final):', ipifyData.ip);
-        } catch (e) {
-          console.warn('⚠️ No se pudo obtener IP pública');
-        }
-      }
-
-      // 3. Agregar timestamp y metadata adicional
-      geoData.timestamp = new Date().toISOString();
-      geoData.userAgent = navigator.userAgent;
-      geoData.platform = navigator.platform;
-      geoData.language = navigator.language;
-      
-      console.log('📍 Geolocalización completa (método:', geoData.precision + '):', geoData);
-      return geoData;
-
-    } catch (error) {
-      console.error('❌ Error general al obtener geolocalización:', error);
-      return geoData; // Retornar datos por defecto
-    }
-  }
-
-  // Método auxiliar para obtener posición GPS del navegador (silencioso, sin toasts molestos)
-  private obtenerPosicionGPS(): Promise<any> {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        console.log('⚠️ Geolocalización no soportada por el navegador');
-        resolve(null);
-        return;
-      }
-
-      console.log('📍 Solicitando permiso de geolocalización al usuario...');
-
-      const timeoutId = setTimeout(() => {
-        console.log('⚠️ Timeout al obtener geolocalización GPS, usando fallback IP');
-        resolve(null);
-      }, 10000); // 10 segundos de timeout
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          clearTimeout(timeoutId);
-          console.log('✅ Usuario ACEPTÓ geolocalización - Precisión:', Math.round(position.coords.accuracy) + 'm');
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-            altitude: position.coords.altitude,
-            altitudeAccuracy: position.coords.altitudeAccuracy,
-            heading: position.coords.heading,
-            speed: position.coords.speed,
-            timestamp: position.timestamp
-          });
-        },
-        (error) => {
-          clearTimeout(timeoutId);
-          
-          switch(error.code) {
-            case error.PERMISSION_DENIED:
-              console.log('⚠️ Usuario RECHAZÓ geolocalización - usando fallback IP');
-              break;
-            case error.POSITION_UNAVAILABLE:
-              console.log('⚠️ Posición GPS no disponible - usando fallback IP');
-              break;
-            case error.TIMEOUT:
-              console.log('⚠️ Timeout GPS - usando fallback IP');
-              break;
-          }
-          
-          // Retornar null silenciosamente para usar fallback IP
-          resolve(null);
-        },
-        {
-          enableHighAccuracy: true, // Usar GPS si está disponible
-          timeout: 10000,
-          maximumAge: 0 // No usar caché
-        }
-      );
-    });
-  }
 
      //Para el grafico de tortas
      view: any = undefined; // undefined hace que los gráficos sean responsive
@@ -343,17 +140,18 @@ export class EnergiaComponent implements OnDestroy {
   };
 
 
-    onSelect(data): void {
-      console.log('Item clicked', JSON.parse(JSON.stringify(data)));
-    }
+    // Eventos deshabilitados para reducir consumo de memoria y CPU
+    // onSelect(data): void {
+    //   console.log('Item clicked', JSON.parse(JSON.stringify(data)));
+    // }
 
-    onActivate(data): void {
-      console.log('Activate', JSON.parse(JSON.stringify(data)));
-    }
+    // onActivate(data): void {
+    //   console.log('Activate', JSON.parse(JSON.stringify(data)));
+    // }
 
-    onDeactivate(data): void {
-      console.log('Deactivate', JSON.parse(JSON.stringify(data)));
-    }
+    // onDeactivate(data): void {
+    //   console.log('Deactivate', JSON.parse(JSON.stringify(data)));
+    // }
 
 
   // Método para cargar el valor del kilowatt desde la configuración
@@ -427,6 +225,7 @@ export class EnergiaComponent implements OnDestroy {
             if (completados === total) {
               this.isLoadingPower = false;
               console.log('✅ Carga de power completada para todos los nodos');
+              this.cdr.markForCheck();
             }
           },
           error: (error) => {
@@ -438,6 +237,7 @@ export class EnergiaComponent implements OnDestroy {
             if (completados === total) {
               this.isLoadingPower = false;
               console.log('⚠️ Carga de power completada con errores');
+              this.cdr.markForCheck();
             }
           }
         });
@@ -559,12 +359,15 @@ export class EnergiaComponent implements OnDestroy {
       .subscribe( datameas => {
         // Convertir a array si es un objeto único
         const dataArray = Array.isArray(datameas) ? datameas : [datameas];
-        this.datameas = this.validateChartData(dataArray);
+        // Limitar datos para evitar sobrecarga
+        const limitedData = dataArray.slice(-this.MAX_DATA_POINTS);
+        this.datameas = this.validateChartData(limitedData);
         
         // NO calcular aquí, esperar a que se carguen los datos del mes
         // El cálculo se hará en llenarDataConsultaMeasMes tomando el valor del día actual
         
-        console.log("llenarDataConsultaMeas - Datos cargados para nodo:", nodo);
+        console.log("llenarDataConsultaMeas - Datos cargados para nodo:", nodo, "(limitado a", limitedData.length, "puntos)");
+        this.cdr.markForCheck();
       })
   }
   llenarDataConsultaMeasMes(nodo: string, sfecha: string){
@@ -573,7 +376,9 @@ export class EnergiaComponent implements OnDestroy {
       .subscribe( datameas => {
         // Convertir a array si es un objeto único
         const dataArray = Array.isArray(datameas) ? datameas : [datameas];
-        this.datameasMes = this.validateChartData(dataArray);
+        // Limitar datos para evitar sobrecarga (últimos 31 días max)
+        const limitedData = dataArray.slice(-31);
+        this.datameasMes = this.validateChartData(limitedData);
       
       // Calcular el total de energía del mes
       this.totalEnergiaMes = this.datameasMes.reduce((total, item) => {
@@ -594,6 +399,7 @@ export class EnergiaComponent implements OnDestroy {
       }
       
       console.log("llenarDataConsultaMeasMes - Total energía mes:", this.totalEnergiaMes, "Costo mes:", this.costoMes);
+      this.cdr.markForCheck();
     })
   }
   // Método para formatear números con separador de miles y 2 decimales con coma
@@ -618,13 +424,17 @@ export class EnergiaComponent implements OnDestroy {
       .subscribe( datamultiMeas  => {
         // Convertir a array si es un objeto único
         const dataArray = Array.isArray(datamultiMeas) ? datamultiMeas : [datamultiMeas];
-        this.datamultiMeas = this.validateChartData(dataArray);
+        // Limitar datos para evitar sobrecarga
+        const limitedData = dataArray.slice(-this.MAX_DATA_POINTS);
+        this.datamultiMeas = this.validateChartData(limitedData);
+        this.cdr.markForCheck();
       })
     //console.log("llenarDataMeasMulti: " + this.datamultiMeas);
   }
 
   // Método del ciclo de vida para limpiar subscripciones
   ngOnDestroy(): void {
+    this.disconnectWebSocket();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -676,8 +486,138 @@ export class EnergiaComponent implements OnDestroy {
     this.router.navigate(['/productos']);
   }
 
-    iraventas(){
-      this.router.navigate(['/home']);
-    }
-
+  iraventas(){
+    this.router.navigate(['/home']);
   }
+
+  // ==================== WEBSOCKET ====================
+  
+  initWebSocket(): void {
+    try {
+      // Determinar la URL del WebSocket según el entorno
+      let wsUrl: string;
+      if (environment.production) {
+        // En producción, usar la misma dirección del host actual
+        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+        const host = window.location.hostname;
+        const port = '8002'; // Puerto del ms-concentrador-energia
+        wsUrl = `${protocol}//${host}:${port}/ws-energia`;
+      } else {
+        // En desarrollo
+        wsUrl = 'http://localhost:8002/ws-energia';
+      }
+      
+      console.log('🔌 Conectando WebSocket a:', wsUrl);
+      
+      this.stompClient = new Client({
+        webSocketFactory: () => new SockJS(wsUrl),
+        debug: (str) => {
+          if (!environment.production) {
+            console.log('STOMP Debug:', str);
+          }
+        },
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+        onConnect: () => {
+          console.log('✅ WebSocket conectado');
+          this.wsConnected = true;
+          this.wsError = false;
+          this.cdr.markForCheck();
+          this.subscribeToNodes();
+        },
+        onDisconnect: () => {
+          console.log('⚠️ WebSocket desconectado');
+          this.wsConnected = false;
+          this.cdr.markForCheck();
+        },
+        onStompError: (frame) => {
+          console.error('❌ Error STOMP:', frame);
+          this.wsError = true;
+          this.wsConnected = false;
+          this.cdr.markForCheck();
+        },
+        onWebSocketError: (event) => {
+          console.error('❌ Error WebSocket:', event);
+          this.wsError = true;
+          this.wsConnected = false;
+          this.cdr.markForCheck();
+        }
+      });
+      
+      this.stompClient.activate();
+      
+    } catch (error) {
+      console.error('❌ Error al inicializar WebSocket:', error);
+      this.wsError = true;
+      this.cdr.markForCheck();
+    }
+  }
+  
+  subscribeToNodes(): void {
+    if (!this.stompClient || !this.stompClient.connected) {
+      console.warn('⚠️ No se puede suscribir, cliente no conectado');
+      return;
+    }
+    
+    // Suscribirse a cada nodo
+    this.nodos.forEach(nodo => {
+      const topic = `/topic/estadistica/${nodo}`;
+      this.stompClient!.subscribe(topic, (message) => {
+        try {
+          const notification = JSON.parse(message.body);
+          console.log(`📊 Notificación recibida para ${nodo}:`, notification);
+          this.handleWebSocketNotification(nodo, notification);
+        } catch (error) {
+          console.error('❌ Error al procesar notificación:', error);
+        }
+      });
+      console.log(`✅ Suscrito a: ${topic}`);
+    });
+    
+    // También suscribirse al topic global
+    this.stompClient.subscribe('/topic/estadistica/all', (message) => {
+      try {
+        const notification = JSON.parse(message.body);
+        console.log('📊 Notificación global:', notification);
+      } catch (error) {
+        console.error('❌ Error al procesar notificación global:', error);
+      }
+    });
+    console.log('✅ Suscrito a: /topic/estadistica/all');
+  }
+  
+  handleWebSocketNotification(nodo: string, notification: any): void {
+    // Actualizar los datos de power del nodo que recibió la notificación
+    if (notification.data) {
+      const data = notification.data;
+      
+      // Actualizar power
+      if (data.power !== undefined && data.power !== null) {
+        this.powerData[nodo] = parseFloat(data.power) || 0;
+      }
+      
+      // Actualizar timestamp
+      if (data.fechameas) {
+        const fecha = new Date(data.fechameas);
+        this.fechameasData[nodo] = this.pipe.transform(fecha, 'HH:mm:ss') || 'N/A';
+      }
+      
+      // Marcar para detección de cambios
+      this.cdr.markForCheck();
+      
+      console.log(`✅ Actualizado ${nodo}: ${this.powerData[nodo]}W a las ${this.fechameasData[nodo]}`);
+    }
+  }
+  
+  disconnectWebSocket(): void {
+    if (this.stompClient) {
+      this.stompClient.deactivate();
+      this.stompClient = null;
+      this.wsConnected = false;
+      console.log('🔌 WebSocket desconectado manualmente');
+      this.cdr.markForCheck();
+    }
+  }
+
+}

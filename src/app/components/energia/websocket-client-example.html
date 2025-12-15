@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket - Estadísticas Energía en Tiempo Real</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .notification {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .notification-header {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 5px;
+        }
+        .notification-body {
+            font-size: 14px;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-connect {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-disconnect {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-subscribe {
+            background-color: #007bff;
+            color: white;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #notifications {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .data-table th, .data-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .data-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 Monitor de Estadísticas de Energía en Tiempo Real</h1>
+        
+        <div id="status" class="status disconnected">
+            Estado: Desconectado
+        </div>
+
+        <div class="controls">
+            <h3>Configuración de Conexión</h3>
+            <input type="text" id="serverUrl" value="http://localhost:8080" placeholder="URL del servidor">
+            <br>
+            <button class="btn-connect" onclick="connect()">Conectar WebSocket</button>
+            <button class="btn-disconnect" onclick="disconnect()">Desconectar</button>
+            <br><br>
+            
+            <h3>Suscripciones</h3>
+            <input type="text" id="nodoInput" value="T26" placeholder="Nodo (ej: T26)">
+            <button class="btn-subscribe" onclick="subscribeToNode()">Suscribirse a Nodo Específico</button>
+            <button class="btn-subscribe" onclick="subscribeToAll()">Suscribirse a Todas las Notificaciones</button>
+        </div>
+
+        <div>
+            <h3>📊 Notificaciones Recibidas</h3>
+            <button onclick="clearNotifications()" style="background-color: #6c757d; color: white;">Limpiar Notificaciones</button>
+            <div id="notifications"></div>
+        </div>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let subscriptions = [];
+
+        function connect() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            const socket = new SockJS(serverUrl + '/ws-energia');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function(frame) {
+                console.log('Conectado: ' + frame);
+                document.getElementById('status').className = 'status connected';
+                document.getElementById('status').innerText = 'Estado: Conectado ✅';
+                addNotification('Sistema', 'Conexión WebSocket establecida exitosamente', {});
+            }, function(error) {
+                console.error('Error de conexión:', error);
+                document.getElementById('status').className = 'status disconnected';
+                document.getElementById('status').innerText = 'Estado: Error de Conexión ❌';
+                addNotification('Sistema', 'Error al conectar: ' + error, {});
+            });
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                subscriptions.forEach(sub => sub.unsubscribe());
+                subscriptions = [];
+                stompClient.disconnect();
+                console.log('Desconectado');
+            }
+            document.getElementById('status').className = 'status disconnected';
+            document.getElementById('status').innerText = 'Estado: Desconectado';
+            addNotification('Sistema', 'Desconectado del servidor WebSocket', {});
+        }
+
+        function subscribeToNode() {
+            const nodo = document.getElementById('nodoInput').value;
+            if (stompClient === null) {
+                alert('Primero debes conectarte al servidor');
+                return;
+            }
+            
+            const destination = '/topic/estadistica/' + nodo;
+            const subscription = stompClient.subscribe(destination, function(message) {
+                const notification = JSON.parse(message.body);
+                console.log('Notificación recibida para ' + nodo + ':', notification);
+                addNotification('Nodo: ' + nodo, notification.mensaje || 'Nueva medición', notification);
+            });
+            
+            subscriptions.push(subscription);
+            addNotification('Sistema', 'Suscrito a notificaciones del nodo: ' + nodo, {destination: destination});
+        }
+
+        function subscribeToAll() {
+            if (stompClient === null) {
+                alert('Primero debes conectarte al servidor');
+                return;
+            }
+            
+            const subscription = stompClient.subscribe('/topic/estadistica/all', function(message) {
+                const notification = JSON.parse(message.body);
+                console.log('Notificación global recibida:', notification);
+                addNotification('Global', notification.mensaje || 'Notificación global', notification);
+            });
+            
+            subscriptions.push(subscription);
+            addNotification('Sistema', 'Suscrito a todas las notificaciones', {destination: '/topic/estadistica/all'});
+        }
+
+        function addNotification(source, message, data) {
+            const notificationsDiv = document.getElementById('notifications');
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            
+            const timestamp = new Date().toLocaleString();
+            let content = `
+                <div class="notification-header">
+                    🔔 ${source} - ${timestamp}
+                </div>
+                <div class="notification-body">
+                    <strong>Mensaje:</strong> ${message}
+                </div>
+            `;
+
+            // Mostrar datos adicionales si existen
+            if (data && Object.keys(data).length > 0) {
+                if (data.data) {
+                    // Si hay datos de medición
+                    content += `
+                        <table class="data-table">
+                            <tr><th>Campo</th><th>Valor</th></tr>
+                            <tr><td>Nodo</td><td>${data.data.nombrenodo || 'N/A'}</td></tr>
+                            <tr><td>Voltaje</td><td>${data.data.volts || 'N/A'} V</td></tr>
+                            <tr><td>Corriente</td><td>${data.data.current || 'N/A'} A</td></tr>
+                            <tr><td>Potencia</td><td>${data.data.power || 'N/A'} W</td></tr>
+                            <tr><td>Energía Total</td><td>${data.data.energy || 'N/A'} Wh</td></tr>
+                            <tr><td>Fecha</td><td>${data.data.fechameas || 'N/A'}</td></tr>
+                        </table>
+                    `;
+                } else {
+                    // Mostrar datos JSON
+                    content += `
+                        <details>
+                            <summary>Ver detalles (JSON)</summary>
+                            <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto;">
+${JSON.stringify(data, null, 2)}
+                            </pre>
+                        </details>
+                    `;
+                }
+            }
+
+            notification.innerHTML = content;
+            notificationsDiv.insertBefore(notification, notificationsDiv.firstChild);
+        }
+
+        function clearNotifications() {
+            document.getElementById('notifications').innerHTML = '';
+        }
+
+        // Auto-conectar al cargar la página (opcional)
+        // window.onload = connect;
+    </script>
+</body>
+</html>

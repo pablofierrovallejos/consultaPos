@@ -61,6 +61,41 @@
   font-size: 1.8em;
   margin-bottom: 30px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+/* WebSocket Indicator */
+.ws-indicator {
+  font-size: 0.5em;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  animation: pulse 2s infinite;
+}
+
+.ws-indicator.ws-connected {
+  background: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+  animation: none;
+}
+
+.ws-indicator.ws-error {
+  background: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 .gauges-grid {

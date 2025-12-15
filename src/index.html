@@ -8,6 +8,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script>
+    // Polyfill para WebSocket - Debe ejecutarse antes que cualquier otro script
+    window.global = window;
+    window.process = window.process || { env: { DEBUG: undefined }, version: '', nextTick: function(fn) { setTimeout(fn, 0); } };
+    window.Buffer = window.Buffer || { isBuffer: function() { return false; } };
+  </script>
 </head>
 <body class="mat-typography">
   <app-root></app-root>
