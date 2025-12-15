@@ -274,4 +274,8 @@ export class ProductosComponent {
     this.mostrarMensaje = false;
   }
 
+  iraproductosvending(): void {
+    this.router.navigate(['/productos-vending']);
+  }
+
 }

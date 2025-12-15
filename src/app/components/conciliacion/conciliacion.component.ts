@@ -10,7 +10,6 @@ import { Router } from '@angular/router';
 export class ConciliacionComponent implements OnInit {
   
   abonosTransbank: any[] = [];
-  cargando: boolean = false;
   error: string = '';
   chartData: any[] = [];
   pieChartData: any[] = [];
@@ -36,7 +35,6 @@ export class ConciliacionComponent implements OnInit {
   }
 
   cargarAbonosTransbank(): void {
-    this.cargando = true;
     this.error = '';
     
     // Obtener mes en formato YYYY-MM
@@ -47,7 +45,6 @@ export class ConciliacionComponent implements OnInit {
         this.abonosTransbank = data;
         this.generarDatosGrafico();
         this.generarDatosGraficoPie();
-        this.cargando = false;
         console.log('Abonos Transbank cargados:', data);
       },
       (error) => {
@@ -58,7 +55,6 @@ export class ConciliacionComponent implements OnInit {
         this.generarDatosGrafico();
         this.generarDatosGraficoPie();
         this.error = '';
-        this.cargando = false;
       }
     );
   }

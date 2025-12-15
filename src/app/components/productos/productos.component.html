@@ -9,9 +9,14 @@
 <div>
     <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 20px auto; padding: 0 20px;">
       <h2>Data Productos</h2>
-      <button class="btn-nuevo-producto" (click)="abrirModalNuevo()">
-        ➕ Nuevo Producto
-      </button>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-productos-vending" (click)="iraproductosvending()">
+          🤖 Máquina Vending
+        </button>
+        <button class="btn-nuevo-producto" (click)="abrirModalNuevo()">
+          ➕ Nuevo Producto
+        </button>
+      </div>
     </div>
 
     <table class="styled-table" align="center" id="excel-table">

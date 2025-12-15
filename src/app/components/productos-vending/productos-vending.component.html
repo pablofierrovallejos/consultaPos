@@ -1,0 +1,212 @@
+<mat-toolbar color="primary">
+  Login | 
+  <button (click)="iraproductos()"> Productos </button> | 
+  <button (click)="iraventas()"> Ventas </button> | 
+  <button (click)="iraenergia()"> Energía</button> | 
+  <button (click)="iragastos()"> Gastos</button>
+</mat-toolbar>
+
+<!-- Mensaje de Alerta -->
+<div *ngIf="mostrarMensaje" class="alerta" [ngClass]="{'alerta-success': mensajeTipo === 'success', 'alerta-error': mensajeTipo === 'error'}">
+  <span>{{ mensajeTexto }}</span>
+  <button (click)="cerrarMensajeAlerta()" class="btn-cerrar-alerta">×</button>
+</div>
+
+<div class="container">
+  <div class="header">
+    <h1>🤖 Productos Disponibles - Máquina Vending</h1>
+    <div class="actions">
+      <button class="btn-recargar" (click)="recargarProductos()">
+        🔄 Recargar
+      </button>
+      <button class="btn-volver" (click)="iraproductos()">
+        ← Volver a Productos
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla de productos -->
+  <div *ngIf="dataProductosDisponibles && dataProductosDisponibles.length > 0" class="table-container">
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>Imagen</th>
+          <th>ID</th>
+          <th>Código</th>
+          <th>Producto</th>
+          <th>Categoría</th>
+          <th>Precio</th>
+          <th>Stock</th>
+          <th>Estado Stock</th>
+          <th>Fila</th>
+          <th>Posición</th>
+          <th>Relay</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let producto of dataProductosDisponibles">
+          <td>
+            <div class="imagen-container">
+              <img *ngIf="producto.imagen && producto.imagen !== '??' && producto.imagen.startsWith('data:image')" 
+                   [src]="producto.imagen" 
+                   [alt]="producto.nombre"
+                   class="producto-imagen">
+              <div *ngIf="!producto.imagen || producto.imagen === '??' || !producto.imagen.startsWith('data:image')" class="no-imagen">
+                📦
+              </div>
+            </div>
+          </td>
+          <td>{{producto.id}}</td>
+          <td><strong>{{producto.codigo}}</strong></td>
+          <td>{{producto.nombre}}</td>
+          <td>
+            <span class="badge-categoria">{{producto.categoria}}</span>
+          </td>
+          <td class="precio">${{producto.precio.toLocaleString('es-CL')}}</td>
+          <td>
+            <span class="badge-stock" [ngClass]="{
+              'stock-normal': producto.stock > 5,
+              'stock-bajo': producto.stock > 0 && producto.stock <= 5,
+              'stock-agotado': producto.stock === 0
+            }">
+              {{producto.stock}}
+            </span>
+          </td>
+          <td>
+            <span [ngClass]="{
+              'estado-activo': producto.estadoStock === 'NORMAL',
+              'estado-advertencia': producto.estadoStock === 'BAJO',
+              'estado-inactivo': producto.estadoStock === 'AGOTADO'
+            }">
+              {{producto.estadoStock}}
+            </span>
+          </td>
+          <td>{{producto.fila}}</td>
+          <td>{{producto.posicion}}</td>
+          <td>
+            <span class="badge-relay">{{producto.relay}}</span>
+          </td>
+          <td>
+            <button class="btn-editar" (click)="abrirModalEditar(producto)">
+              ✏️ Actualizar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mensaje si no hay productos -->
+  <div *ngIf="!dataProductosDisponibles || dataProductosDisponibles.length === 0" class="no-productos">
+    <div class="no-productos-icon">📦</div>
+    <h2>No hay productos disponibles</h2>
+    <p>La máquina vending no tiene productos registrados en este momento.</p>
+    <button class="btn-recargar" (click)="recargarProductos()">
+      🔄 Intentar de nuevo
+    </button>
+  </div>
+</div>
+
+<!-- Modal de Edición -->
+<div class="modal-overlay" *ngIf="mostrarModal" (mousedown)="onOverlayMouseDown($event)">
+  <div class="modal-content" (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>✏️ Actualizar Producto Vending</h2>
+      <button class="btn-cerrar" (click)="cerrarModal()">×</button>
+    </div>
+
+    <div class="modal-body" *ngIf="productoEditando">
+      <div class="form-row">
+        <div class="form-group">
+          <label>ID:</label>
+          <input type="text" [(ngModel)]="productoEditando.id" readonly class="form-control-readonly">
+        </div>
+
+        <div class="form-group">
+          <label>Código *:</label>
+          <input type="text" [(ngModel)]="productoEditando.codigo" class="form-control" placeholder="Ej: A1" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Nombre del Producto *:</label>
+        <input type="text" [(ngModel)]="productoEditando.nombre" class="form-control" placeholder="Ej: Coca Cola 500ml" required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Categoría *:</label>
+          <input type="text" [(ngModel)]="productoEditando.categoria" class="form-control" placeholder="Ej: Bebidas" required>
+        </div>
+
+        <div class="form-group">
+          <label>Precio *:</label>
+          <input type="number" [(ngModel)]="productoEditando.precio" class="form-control" step="1" min="0" placeholder="0" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Stock *:</label>
+          <input type="number" [(ngModel)]="productoEditando.stock" class="form-control" min="0" placeholder="0" required>
+        </div>
+
+        <div class="form-group">
+          <label>Estado Stock *:</label>
+          <select [(ngModel)]="productoEditando.estadoStock" class="form-control" required>
+            <option value="NORMAL">NORMAL</option>
+            <option value="BAJO">BAJO</option>
+            <option value="AGOTADO">AGOTADO</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fila *:</label>
+          <input type="number" [(ngModel)]="productoEditando.fila" class="form-control" min="1" placeholder="1" required>
+        </div>
+
+        <div class="form-group">
+          <label>Posición *:</label>
+          <input type="number" [(ngModel)]="productoEditando.posicion" class="form-control" min="1" placeholder="1" required>
+        </div>
+
+        <div class="form-group">
+          <label>Relay *:</label>
+          <input type="number" [(ngModel)]="productoEditando.relay" class="form-control" min="1" placeholder="1" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Nueva Imagen del Producto:</label>
+        <div class="imagen-upload-container">
+          <div class="imagen-preview" *ngIf="imagenPreview">
+            <img [src]="imagenPreview" alt="Preview">
+          </div>
+          <div class="imagen-preview no-imagen-preview" *ngIf="!imagenPreview">
+            <span>📦</span>
+            <p>Sin imagen</p>
+          </div>
+          <input type="file" 
+                 #fileInput 
+                 (change)="onFileSelected($event)" 
+                 accept="image/*" 
+                 class="file-input">
+          <button type="button" class="btn-seleccionar-imagen" (click)="fileInput.click()">
+            📁 Seleccionar Nueva Imagen
+          </button>
+          <p class="imagen-info">Formatos: JPG, PNG, GIF. Máximo 5MB</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn-guardar" (click)="guardarProducto()">
+        💾 Guardar Cambios
+      </button>
+    </div>
+  </div>
+</div>

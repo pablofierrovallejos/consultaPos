@@ -7,12 +7,14 @@ import { ProductosComponent } from './components/productos/productos.component';
 import { IngresoventaComponent } from './components/ingresoventa/ingresoventa.component'; // Add this import
 import { GastosComponent } from './components/gastos/gastos.component'; // Add this import
 import { ConciliacionComponent } from './components/conciliacion/conciliacion.component'; // Add this import
+import { ProductosVendingComponent } from './components/productos-vending/productos-vending.component'; // Add this import
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: '', component: HomeComponent },
   { path: 'clientes', component: ClientesComponent },
   { path: 'energia', component: EnergiaComponent },
   { path: 'productos', component: ProductosComponent },
+  { path: 'productos-vending', component: ProductosVendingComponent },
   { path: 'ingresoventa', component: IngresoventaComponent },
   { path: 'gastos', component: GastosComponent },
   { path: 'conciliacion', component: ConciliacionComponent },

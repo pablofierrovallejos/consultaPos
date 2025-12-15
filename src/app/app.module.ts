@@ -17,6 +17,7 @@ import { LoadingInterceptor } from './loading.interceptor';
 import { IngresoventaComponent } from './components/ingresoventa/ingresoventa.component';
 import { GastosComponent } from './components/gastos/gastos.component';
 import { ConciliacionComponent } from './components/conciliacion/conciliacion.component';
+import { ProductosVendingComponent } from './components/productos-vending/productos-vending.component';
 
 
 @NgModule({
@@ -29,7 +30,8 @@ import { ConciliacionComponent } from './components/conciliacion/conciliacion.co
     SpinnerComponent,
     IngresoventaComponent,
     GastosComponent,
-    ConciliacionComponent
+    ConciliacionComponent,
+    ProductosVendingComponent
   ],
   imports: [
     BrowserModule,

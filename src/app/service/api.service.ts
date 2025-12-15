@@ -251,4 +251,25 @@ export class ApiService {
     return this.http.get(this.urlAbonosTransbank + mes);
   }
 
+  // Método para obtener productos disponibles en la máquina vending
+  public getProductosDisponibles(): Observable<any>{
+    return this.http.get(this.baseUrl + '/productos/productos-disponibles');
+  }
+
+  // Método para actualizar producto vending completo
+  public actualizarProductoVending(id: number, producto: any): Observable<any>{
+    const headers = new HttpHeaders()
+      .set('content-type', 'application/json');
+    const options = { headers: headers };
+    return this.http.post(`${this.baseUrl}/productos/vending/${id}/actualizar`, producto, options);
+  }
+
+  // Método para actualizar imagen de producto vending
+  public actualizarImagenVending(id: number, imagen: string): Observable<any>{
+    const headers = new HttpHeaders()
+      .set('content-type', 'application/json');
+    const options = { headers: headers };
+    return this.http.post(`${this.baseUrl}/productos/vending/${id}/imagen`, { imagen }, options);
+  }
+
 }
