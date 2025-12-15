@@ -1,15 +1,20 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { Color, ScaleType } from '@swimlane/ngx-charts';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../service/api.service';
 import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-energia',
   templateUrl: './energia.component.html',
-  styleUrls: ['./energia.component.css']
+  styleUrls: ['./energia.component.css', './energia-gauge-styles.css']
 })
-export class EnergiaComponent {
+export class EnergiaComponent implements OnDestroy {
+  private destroy$ = new Subject<void>();
+  private isLoadingPower = false; // Bandera para evitar llamadas simultáneas
+  
   ChangedFormat='';
   ChangedFormatDisplay=''; // Formato DD-MM-YY para mostrar en headers
   datameas: any[] = [];
@@ -25,6 +30,22 @@ export class EnergiaComponent {
   nombreMesActual = '';
 
   changedFecha: Date = new Date();
+
+  // Nuevos nodos y datos de power
+  nodos: string[] = ['T163', 'T221', 'T77', 'T26'];
+  nodoSeleccionado: string = 'T163'; // Nodo por defecto
+  powerData: { [key: string]: number } = {}; // Power actual de cada nodo (última medición)
+  fechameasData: { [key: string]: string } = {}; // Fecha/hora de la última medición de cada nodo
+  maxPower: number = 3500; // Rango máximo de power en watts
+  dataPorNodo: { [key: string]: any[] } = {}; // Guardar datos de cada nodo
+  
+  // Descripciones de los nodos
+  nodosDescripcion: { [key: string]: string } = {
+    'T163': 'Cons. Negocio',
+    'T221': 'PanelSolar Fondo',
+    'T77': 'Cons. CasaFondo',
+    'T26': 'Cons. CasaCentro'
+  };
 
   pipe = new DatePipe('en-US');
   newDate: string= "";
@@ -280,7 +301,7 @@ export class EnergiaComponent {
      isDoughnut: boolean = true;
      legendPosition: string = 'below';
      label: string = "Total ventas mes en pesos";
-     animations: boolean = true;
+     animations: boolean = false; // DESHABILITADO para evitar memory leaks
      colorScheme: Color = {
       name: 'myScheme',
       selectable: true,
@@ -364,9 +385,102 @@ export class EnergiaComponent {
     
     // Usar valor por defecto (236) hasta que se implemente el backend
     console.log('Usando valor kilowatt por defecto:', this.valorKilowatt);
-    this.llenarDataConsultaMeas(this.ChangedFormat);
-    this.llenarDataConsultaMeasMes(this.ChangedFormat);
-    this.llenarDataMeasMulti(this.ChangedFormat);
+    
+    // Cargar datos del nodo seleccionado
+    this.llenarDataConsultaMeas(this.nodoSeleccionado, this.ChangedFormat);
+    this.llenarDataConsultaMeasMes(this.nodoSeleccionado, this.ChangedFormat);
+    this.llenarDataMeasMulti(this.nodoSeleccionado, this.ChangedFormat);
+    
+    // Cargar power (última medición) de todos los nodos
+    this.cargarPowerTodosNodos();
+  }
+
+  // Método para cargar el último valor de power de todos los nodos
+  cargarPowerTodosNodos(): void {
+    // Evitar llamadas simultáneas
+    if (this.isLoadingPower) {
+      console.log('⏸️ Ya hay una carga de power en progreso, saltando...');
+      return;
+    }
+    
+    this.isLoadingPower = true;
+    console.log('🔄 Cargando power de todos los nodos...');
+    
+    let completados = 0;
+    const total = this.nodos.length;
+    
+    this.nodos.forEach(nodo => {
+      // Usar getPowerNodo que solo trae el último registro (más eficiente)
+      this.ApiService.getPowerNodo(nodo)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (datameas: any) => {
+            console.log(`📊 Respuesta getPowerNodo para ${nodo}:`, datameas);
+            
+            // datameas ya es el último registro
+            this.powerData[nodo] = this.extraerPowerDeRegistro(datameas);
+            this.fechameasData[nodo] = this.extraerFechameasDeRegistro(datameas);
+            
+            console.log(`✅ ${nodo}: ${this.powerData[nodo]}W, ${this.fechameasData[nodo]}`);
+            
+            completados++;
+            if (completados === total) {
+              this.isLoadingPower = false;
+              console.log('✅ Carga de power completada para todos los nodos');
+            }
+          },
+          error: (error) => {
+            console.error(`❌ Error cargando power de ${nodo}:`, error);
+            this.powerData[nodo] = 0;
+            this.fechameasData[nodo] = 'Error';
+            
+            completados++;
+            if (completados === total) {
+              this.isLoadingPower = false;
+              console.log('⚠️ Carga de power completada con errores');
+            }
+          }
+        });
+    });
+  }
+
+  // Método auxiliar para extraer el valor de power de un registro
+  private extraerPowerDeRegistro(registro: any): number {
+    // Intentar obtener power de diferentes campos posibles
+    if (registro.power !== undefined && registro.power !== null) {
+      return parseFloat(registro.power) || 0;
+    }
+    if (registro.value !== undefined && registro.value !== null) {
+      return parseFloat(registro.value) || 0;
+    }
+    if (registro.watts !== undefined && registro.watts !== null) {
+      return parseFloat(registro.watts) || 0;
+    }
+    return 0;
+  }
+
+  // Método auxiliar para extraer y formatear fechameas de un registro
+  private extraerFechameasDeRegistro(registro: any): string {
+    if (registro.fechameas) {
+      // fechameas viene como "2025-12-11T14:30:45" o similar
+      const fecha = new Date(registro.fechameas);
+      // Formatear solo la hora HH:MM:SS
+      return this.pipe.transform(fecha, 'HH:mm:ss') || 'N/A';
+    }
+    return 'N/A';
+  }
+
+  // Método para cambiar de nodo
+  cambiarNodo(nodo: string): void {
+    this.nodoSeleccionado = nodo;
+    this.llenarDataConsultaMeas(nodo, this.ChangedFormat);
+    this.llenarDataConsultaMeasMes(nodo, this.ChangedFormat);
+    this.llenarDataMeasMulti(nodo, this.ChangedFormat);
+  }
+
+  // Método para refrescar los valores de power (llamar cada X segundos)
+  refrescarPowerNodos(): void {
+    this.cargarPowerTodosNodos();
   }
 
   // Helper method para validar y limpiar datos de gráficos
@@ -439,19 +553,27 @@ export class EnergiaComponent {
     return valor;
   }
 
-  llenarDataConsultaMeas(sfecha){
-    this.ApiService.getDataConsultaMeas(sfecha).subscribe( datameas => {
-      this.datameas = this.validateChartData(datameas);
-      
-      // NO calcular aquí, esperar a que se carguen los datos del mes
-      // El cálculo se hará en llenarDataConsultaMeasMes tomando el valor del día actual
-      
-      console.log("llenarDataConsultaMeas - Datos cargados");
-    })
+  llenarDataConsultaMeas(nodo: string, sfecha: string){
+    this.ApiService.getDataConsultaMeas(nodo, sfecha)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe( datameas => {
+        // Convertir a array si es un objeto único
+        const dataArray = Array.isArray(datameas) ? datameas : [datameas];
+        this.datameas = this.validateChartData(dataArray);
+        
+        // NO calcular aquí, esperar a que se carguen los datos del mes
+        // El cálculo se hará en llenarDataConsultaMeasMes tomando el valor del día actual
+        
+        console.log("llenarDataConsultaMeas - Datos cargados para nodo:", nodo);
+      })
   }
-  llenarDataConsultaMeasMes(sfecha){
-    this.ApiService.getDataConsultaMeasMes(sfecha).subscribe( datameas => {
-      this.datameasMes = this.validateChartData(datameas);
+  llenarDataConsultaMeasMes(nodo: string, sfecha: string){
+    this.ApiService.getDataConsultaMeasMes(nodo, sfecha)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe( datameas => {
+        // Convertir a array si es un objeto único
+        const dataArray = Array.isArray(datameas) ? datameas : [datameas];
+        this.datameasMes = this.validateChartData(dataArray);
       
       // Calcular el total de energía del mes
       this.totalEnergiaMes = this.datameasMes.reduce((total, item) => {
@@ -490,11 +612,52 @@ export class EnergiaComponent {
     });
   }
 
-  llenarDataMeasMulti(sfecha){
-    this.ApiService.getDataConsultaMultiMeasMes(sfecha).subscribe( datamultiMeas  => {
-      this.datamultiMeas = this.validateChartData(datamultiMeas);
-    })
+  llenarDataMeasMulti(nodo: string, sfecha: string){
+    this.ApiService.getDataConsultaMultiMeasMes(nodo, sfecha)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe( datamultiMeas  => {
+        // Convertir a array si es un objeto único
+        const dataArray = Array.isArray(datamultiMeas) ? datamultiMeas : [datamultiMeas];
+        this.datamultiMeas = this.validateChartData(dataArray);
+      })
     //console.log("llenarDataMeasMulti: " + this.datamultiMeas);
+  }
+
+  // Método del ciclo de vida para limpiar subscripciones
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // TrackBy function para optimizar el ngFor de los nodos
+  trackByNodo(index: number, nodo: string): string {
+    return nodo;
+  }
+
+  // Método para calcular el porcentaje de power para el gauge
+  getPowerPercentage(nodo: string): number {
+    const power = this.powerData[nodo] || 0;
+    return (power / this.maxPower) * 100;
+  }
+
+  // Método para obtener el color del gauge según el nivel de power
+  getGaugeColor(nodo: string): string {
+    const power = this.powerData[nodo] || 0;
+    const percentage = (power / this.maxPower) * 100;
+    
+    if (percentage < 33) return '#00FF00'; // Verde
+    if (percentage < 66) return '#FFA500'; // Naranja
+    return '#FF0000'; // Rojo
+  }
+
+  // Método para obtener el esquema de color completo para el gauge
+  getGaugeColorScheme(nodo: string): Color {
+    return {
+      name: 'gaugeScheme',
+      selectable: false,
+      group: ScaleType.Linear,
+      domain: [this.getGaugeColor(nodo)]
+    };
   }
 
   iraclientes(){

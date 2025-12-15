@@ -41,11 +41,15 @@ export class ApiService {
   private urlApiEstadVentasMesProd2 = this.baseUrl +'/productos/cons-estadis-mensual-masvendido-monto/';
 
 
-  private urlconsultaMeas = this.baseUrl +'/energia/consultar-estadistica/Meas1/';
-  private urlconsultaMeasMes = this.baseUrl +'/energia/consultar-consumo-mes/Meas1/';
-
-  private urlconsultMultiMeasMes = this.baseUrl +'/energia/consultar-consumo-mes2/Meas1/';
+  // URLs para los nuevos nodos T163, T221, T77, T26
+  private urlconsultaMeas = this.baseUrl +'/energia/consultar-estadistica/';
+  private urlconsultaMeasMes = this.baseUrl +'/energia/consultar-consumo-mes/';
+  private urlconsultMultiMeasMes = this.baseUrl +'/energia/consultar-consumo-mes2/';
+  private urlconsultaPowerNodo = this.baseUrl +'/energia/consultar-power/';
   private urlconsultaImagenCliente = this.baseUrl +'/productos/consultar-imagencli';
+
+  // Lista de nodos disponibles
+  nodos: string[] = ['T163', 'T221', 'T77', 'T26'];
 
   private urlconsultaCostos = this.baseUrl +'/productos/consultar-costos/';
   private urlAbonosTransbank = this.baseUrl +'/abonos/transbank/';
@@ -103,16 +107,28 @@ export class ApiService {
     return this.http.get<any>(this.urlApiEstadVentasMesProd2 + sfecha );
   }
 
-  public getDataConsultaMeas(sfecha): Observable<any>{
-    return this.http.get<any>(this.urlconsultaMeas + sfecha);
+  public getDataConsultaMeas(nodo: string, sfecha: string): Observable<any>{
+    return this.http.get<any>(this.urlconsultaMeas + nodo + '/' + sfecha);
   }
 
-  public getDataConsultaMeasMes(sfecha): Observable<any>{
-    return this.http.get<any>(this.urlconsultaMeasMes + sfecha);
+  public getDataConsultaMeasMes(nodo: string, sfecha: string): Observable<any>{
+    return this.http.get<any>(this.urlconsultaMeasMes + nodo + '/' + sfecha);
   }
 
-  public getDataConsultaMultiMeasMes(sfecha): Observable<any>{
-    return this.http.get<any>(this.urlconsultMultiMeasMes + sfecha);
+  public getDataConsultaMultiMeasMes(nodo: string, sfecha: string): Observable<any>{
+    return this.http.get<any>(this.urlconsultMultiMeasMes + nodo + '/' + sfecha);
+  }
+
+  // Nuevo método para obtener el valor de power actual de un nodo
+  public getPowerNodo(nodo: string): Observable<any>{
+    // Usar consultar-estadistica con la fecha actual
+    const today = new Date();
+    const year = today.getFullYear().toString().slice(-2);
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const day = today.getDate().toString().padStart(2, '0');
+    const fechaStr = `${year}-${month}-${day}`;
+    
+    return this.http.get<any>(`${this.urlconsultaMeas}${nodo}/${fechaStr}`);
   }
 
   public getDataConsultaImagenCliente(): Observable<any>{

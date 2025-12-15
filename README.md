@@ -48,9 +48,9 @@ ng serve --port 4201	//ejecutar angular en un puerto determinado
 ng build --configuration=production
 
 ## Construir imagen Docker (incrementar versión)
-docker build -t servicio-ng-front-vtas:v16 .
-docker tag servicio-ng-front-vtas:v16 96552333aa/servicio-ng-front-vtas:v16
-docker push 96552333aa/servicio-ng-front-vtas:v16
+docker build -t servicio-ng-front-vtas:v25 .
+docker tag servicio-ng-front-vtas:v25 96552333aa/servicio-ng-front-vtas:v25
+docker push 96552333aa/servicio-ng-front-vtas:v25
 
 ## Ejecutar localmente para pruebas
 docker run -d -p 8080:80 servicio-ng-front-vtas:v14

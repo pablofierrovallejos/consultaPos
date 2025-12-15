@@ -4,6 +4,49 @@
 
   <mat-toolbar color="primary">Login |   <button  (click)="iraproductos()"> Productos </button>   | <button  (click)="iraventas()"> Ventas </button> |  <button  (click)="iraenergia()"> Energía</button>  | <!-- <button  (click)="iraclientes()"> Ir a cliente</button> --> <button  (click)="iragastos()"> Gastos</button> </mat-toolbar>
 
+  <!-- Medidores de Power en tiempo real -->
+  <div class="power-gauges-container">
+    <div class="power-header">
+      <h2 class="section-title">⚡ Power en Tiempo Real (Watts) - Última Medición</h2>
+      <div class="node-selector-inline">
+        <span class="selector-label">Nodo:</span>
+        <div class="node-buttons">
+          <button *ngFor="let nodo of nodos; trackBy: trackByNodo" 
+                  [class.active]="nodo === nodoSeleccionado"
+                  (click)="cambiarNodo(nodo)">
+            {{nodo}}
+          </button>
+        </div>
+      </div>
+      <button class="refresh-button" (click)="refrescarPowerNodos()">🔄 Actualizar</button>
+    </div>
+    <div class="gauges-grid">
+      <div class="gauge-card" *ngFor="let nodo of nodos; trackBy: trackByNodo">
+        <div class="nodo-info-card">
+          <div class="nodo-code">{{nodo}}</div>
+          <div class="nodo-descripcion">{{nodosDescripcion[nodo]}}</div>
+        </div>
+        <div class="gauge-wrapper">
+          <ngx-charts-gauge
+            [view]="[140, 110]"
+            [scheme]="getGaugeColorScheme(nodo)"
+            [results]="[{ name: nodo, value: powerData[nodo] || 0 }]"
+            [min]="0"
+            [max]="maxPower"
+            [angleSpan]="240"
+            [startAngle]="-120"
+            [units]="'W'"
+            [bigSegments]="10"
+            [smallSegments]="5"
+            [showAxis]="true"
+            [margin]="[3, 10, 3, 10]">
+          </ngx-charts-gauge>
+          <div class="gauge-timestamp">{{fechameasData[nodo] || 'N/A'}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Dashboard Container -->
   <div class="dashboard-container">
 
@@ -11,7 +54,7 @@
     <div class="dashboard-card">
       <div class="card-header">
         <h2 class="card-title">
-          ⚡ Potencia consumida Watts por día {{ChangedFormatDisplay}}
+          ⚡ Potencia consumida Watts por día {{ChangedFormatDisplay}} - Nodo: {{nodoSeleccionado}}
           <span class="valor-kwh">Valor kWh: ${{valorKilowatt}}</span>
           <span class="total-energia">(Total: {{formatearNumero(totalEnergiaDia)}} W)</span>
           <span class="costo-energia">(Costo: ${{formatearNumero(costoDia)}})</span>
@@ -32,6 +75,7 @@
             [xAxisLabel]="xAxisLabelMeas"
             [yAxisLabel]="yAxisLabelMeas"
             [showDataLabel]="false"
+            [animations]="false"
             (select)="onSelect($event)">
           </ngx-charts-bar-vertical>
         </div>
@@ -42,7 +86,7 @@
     <div class="dashboard-card">
       <div class="card-header">
         <h2 class="card-title">
-          📊 Energía consumida Watts por mes {{nombreMesActual}}
+          📊 Energía consumida Watts por mes {{nombreMesActual}} - Nodo: {{nodoSeleccionado}}
           <span class="total-energia">(Total: {{formatearNumero(totalEnergiaMes)}} W)</span>
           <span class="costo-energia">(Costo: ${{formatearNumero(costoMes)}})</span>
         </h2>
@@ -63,6 +107,7 @@
             [yAxisLabel]="yAxisLabelMeas"
             [showDataLabel]="true"
             [dataLabelFormatting]="formatearValorBarra"
+            [animations]="false"
             (select)="onSelect($event)">
           </ngx-charts-bar-vertical>
         </div>
@@ -72,7 +117,7 @@
     <!-- CARD 3: Potencia consumida vs Generada -->
     <div class="dashboard-card">
       <div class="card-header">
-        <h2 class="card-title">⚡🔋 Potencia consumida vs Generada Watts por día {{ChangedFormatDisplay}}</h2>
+        <h2 class="card-title">⚡🔋 Potencia consumida vs Generada Watts por día {{ChangedFormatDisplay}} - Nodo: {{nodoSeleccionado}}</h2>
       </div>
       <div class="card-body">
         <div class="chart-container">
@@ -90,6 +135,7 @@
             [xAxisLabel]="xAxisLabel2"
             [yAxisLabel]="yAxisLabel2"
             [legendTitle]="legendTitle2"
+            [animations]="false"
             (select)="onSelect($event)"
             (activate)="onActivate($event)"
             (deactivate)="onDeactivate($event)">
