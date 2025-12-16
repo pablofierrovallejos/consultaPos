@@ -43,6 +43,7 @@ export class ApiService {
 
   // URLs para los nuevos nodos T163, T221, T77, T26
   private urlconsultaMeas = this.baseUrl +'/energia/consultar-estadistica/';
+  private urlconsultaMeasHora = this.baseUrl +'/energia/consultar-measures/'; // Nuevo: múltiples mediciones por hora
   private urlconsultaMeasMes = this.baseUrl +'/energia/consultar-consumo-mes/';
   private urlconsultMultiMeasMes = this.baseUrl +'/energia/consultar-consumo-mes2/';
   private urlconsultaPowerNodo = this.baseUrl +'/energia/consultar-power/';
@@ -111,6 +112,11 @@ export class ApiService {
     return this.http.get<any>(this.urlconsultaMeas + nodo + '/' + sfecha);
   }
 
+  // Nuevo método para obtener múltiples mediciones por hora del día
+  public getDataConsultaMeasHora(nodo: string, sfecha: string): Observable<any>{
+    return this.http.get<any>(this.urlconsultaMeasHora + nodo + '/' + sfecha);
+  }
+
   public getDataConsultaMeasMes(nodo: string, sfecha: string): Observable<any>{
     return this.http.get<any>(this.urlconsultaMeasMes + nodo + '/' + sfecha);
   }
@@ -123,10 +129,10 @@ export class ApiService {
   public getPowerNodo(nodo: string): Observable<any>{
     // Usar consultar-estadistica con la fecha actual
     const today = new Date();
-    const year = today.getFullYear().toString().slice(-2);
+    const year = today.getFullYear().toString(); // 4 dígitos: 2025
     const month = (today.getMonth() + 1).toString().padStart(2, '0');
     const day = today.getDate().toString().padStart(2, '0');
-    const fechaStr = `${year}-${month}-${day}`;
+    const fechaStr = `${year}-${month}-${day}`; // Formato: 2025-12-15
     
     return this.http.get<any>(`${this.urlconsultaMeas}${nodo}/${fechaStr}`);
   }

@@ -27,7 +27,8 @@ export class EnergiaComponent implements OnDestroy {
   
   ChangedFormat='';
   ChangedFormatDisplay=''; // Formato DD-MM-YY para mostrar en headers
-  datameas: any[] = [];
+  datameas: any[] = []; // Ya no se usa para el gráfico principal
+  datameasTodosNodos: any[] = []; // Datos multi-línea para todos los nodos
   datameasMes: any[] = [];
   datamultiMeas: any[] = [];
   totalEnergiaMes: number = 0; // Total de energía consumida en el mes
@@ -70,7 +71,7 @@ export class EnergiaComponent implements OnDestroy {
   }
 
   ngOnInit(): void{
-    this.ChangedFormat = this.pipe.transform(this.changed, 'YY-MM-dd') ?? '';
+    this.ChangedFormat = this.pipe.transform(this.changed, 'yyyy-MM-dd') ?? ''; // Formato 4 dígitos: 2025-12-15
     this.ChangedFormatDisplay = this.pipe.transform(this.changed, 'dd-MM-yy') ?? ''; // Formato para mostrar
     this.newDate = this.pipe.transform(this.changed, 'dd/MM/yyyy') ?? '';
 
@@ -112,7 +113,7 @@ export class EnergiaComponent implements OnDestroy {
       name: 'myScheme',
       selectable: true,
       group: ScaleType.Linear,
-      domain: ['#FF0C00', '#FF0C00', '#FF0C00'],
+      domain: ['#FF0C00', '#00C853', '#FFC107', '#2196F3'], // Rojo, Verde, Amarillo, Azul
     };
 
     showXAxis = true;
@@ -184,13 +185,100 @@ export class EnergiaComponent implements OnDestroy {
     // Usar valor por defecto (236) hasta que se implemente el backend
     console.log('Usando valor kilowatt por defecto:', this.valorKilowatt);
     
-    // Cargar datos del nodo seleccionado
-    this.llenarDataConsultaMeas(this.nodoSeleccionado, this.ChangedFormat);
+    // Cargar datos de TODOS los nodos para el gráfico multi-línea del día
+    this.cargarDatosTodosNodosDia();
+    
+    // Cargar datos del nodo seleccionado para gráficos individuales
     this.llenarDataConsultaMeasMes(this.nodoSeleccionado, this.ChangedFormat);
     this.llenarDataMeasMulti(this.nodoSeleccionado, this.ChangedFormat);
     
     // Cargar power (última medición) de todos los nodos
     this.cargarPowerTodosNodos();
+  }
+
+  // Método para cargar datos del día de TODOS los nodos (gráfico multi-línea)
+  cargarDatosTodosNodosDia(): void {
+    console.log('🔄 Cargando datos del día para todos los nodos...');
+    console.log('📅 Fecha formato:', this.ChangedFormat);
+    console.log('🔗 Endpoint base:', '/energia/consultar-measures/{nodo}/{fecha}');
+    
+    let completados = 0;
+    const total = this.nodos.length;
+    const datosPorNodo: { [key: string]: any[] } = {};
+    
+    this.nodos.forEach(nodo => {
+      console.log(`🔄 Cargando ${nodo} con fecha ${this.ChangedFormat}...`);
+      
+      // Usar getDataConsultaMeasHora para obtener múltiples mediciones por hora
+      this.ApiService.getDataConsultaMeasHora(nodo, this.ChangedFormat)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (datameas: any) => {
+            console.log(`📦 Datos recibidos para ${nodo}:`, datameas);
+            console.log(`📊 Tipo de datos:`, Array.isArray(datameas) ? 'Array' : typeof datameas);
+            console.log(`📏 Cantidad de registros:`, Array.isArray(datameas) ? datameas.length : 1);
+            
+            const dataArray = Array.isArray(datameas) ? datameas : [datameas];
+            // No limitar datos para mostrar el día completo
+            
+            // Transformar datos del backend (power, fechameas) al formato ngx-charts (name, value)
+            const transformedData = dataArray.map(item => ({
+              name: this.extraerHoraDeRegistro(item.fechameas),
+              value: parseFloat(item.power) || 0
+            }));
+            
+            datosPorNodo[nodo] = transformedData;
+            
+            console.log(`✅ Datos procesados para ${nodo}:`, datosPorNodo[nodo].length, 'puntos');
+            console.log(`📊 Muestra de datos transformados:`, datosPorNodo[nodo].slice(0, 3));
+            
+            completados++;
+            if (completados === total) {
+              // Todos los nodos cargados, transformar a formato multi-línea
+              this.datameasTodosNodos = this.transformarAMultiLinea(datosPorNodo);
+              console.log('✅ Datos multi-línea cargados:', this.datameasTodosNodos.length, 'series');
+              console.log('📊 Estructura final:', JSON.stringify(this.datameasTodosNodos, null, 2));
+              this.cdr.markForCheck();
+            }
+          },
+          error: (error) => {
+            console.error(`❌ Error cargando datos de ${nodo}:`, error);
+            console.error(`❌ URL intentada: /energia/consultar-measures/${nodo}/${this.ChangedFormat}`);
+            datosPorNodo[nodo] = [];
+            
+            completados++;
+            if (completados === total) {
+              this.datameasTodosNodos = this.transformarAMultiLinea(datosPorNodo);
+              console.log('⚠️ Datos multi-línea cargados con errores');
+              this.cdr.markForCheck();
+            }
+          }
+        });
+    });
+  }
+  
+  // Transformar datos de múltiples nodos a formato multi-línea de ngx-charts
+  private transformarAMultiLinea(datosPorNodo: { [key: string]: any[] }): any[] {
+    const resultado: any[] = [];
+    
+    // Mapeo de nombres de nodos a descripciones
+    const nombreDescripcion: { [key: string]: string } = {
+      'T163': 'Negocio',
+      'T221': 'PanelSolar',
+      'T77': 'CasaFondo',
+      'T26': 'CasaCentro'
+    };
+    
+    this.nodos.forEach(nodo => {
+      if (datosPorNodo[nodo] && datosPorNodo[nodo].length > 0) {
+        resultado.push({
+          name: nombreDescripcion[nodo] || nodo,
+          series: datosPorNodo[nodo]
+        });
+      }
+    });
+    
+    return resultado;
   }
 
   // Método para cargar el último valor de power de todos los nodos
@@ -270,10 +358,19 @@ export class EnergiaComponent implements OnDestroy {
     return 'N/A';
   }
 
+  // Método auxiliar para extraer solo la hora de fechameas para el eje X del gráfico
+  private extraerHoraDeRegistro(fechameas: string): string {
+    if (fechameas) {
+      const fecha = new Date(fechameas);
+      return this.pipe.transform(fecha, 'HH:mm') || 'N/A';
+    }
+    return 'N/A';
+  }
+
   // Método para cambiar de nodo
   cambiarNodo(nodo: string): void {
     this.nodoSeleccionado = nodo;
-    this.llenarDataConsultaMeas(nodo, this.ChangedFormat);
+    // Solo actualizar gráficos individuales (mes y multi)
     this.llenarDataConsultaMeasMes(nodo, this.ChangedFormat);
     this.llenarDataMeasMulti(nodo, this.ChangedFormat);
   }

@@ -61,29 +61,26 @@
     <div class="dashboard-card">
       <div class="card-header">
         <h2 class="card-title">
-          ⚡ Potencia consumida Watts por día {{ChangedFormatDisplay}} - Nodo: {{nodoSeleccionado}}
+          ⚡ Potencia consumida Watts por día {{ChangedFormatDisplay}} - Todos los Nodos
           <span class="valor-kwh">Valor kWh: ${{valorKilowatt}}</span>
-          <span class="total-energia">(Total: {{formatearNumero(totalEnergiaDia)}} W)</span>
-          <span class="costo-energia">(Costo: ${{formatearNumero(costoDia)}})</span>
         </h2>
       </div>
       <div class="card-body">
         <div class="chart-container">
-          <ngx-charts-bar-vertical
+          <ngx-charts-line-chart
             [view]="view"
             [scheme]="colorSchemeMeas"
-            [results]="datameas"
-            [gradient]="false"
+            [results]="datameasTodosNodos"
             [xAxis]="showXAxis"
             [yAxis]="showYAxis"
-            [legend]="showLegend"
+            [legend]="true"
             [showXAxisLabel]="showXAxisLabel"
             [showYAxisLabel]="true"
             [xAxisLabel]="xAxisLabelMeas"
             [yAxisLabel]="yAxisLabelMeas"
-            [showDataLabel]="false"
+            [autoScale]="true"
             [animations]="false">
-          </ngx-charts-bar-vertical>
+          </ngx-charts-line-chart>
         </div>
       </div>
     </div>
