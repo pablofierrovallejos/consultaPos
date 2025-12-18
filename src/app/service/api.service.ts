@@ -244,6 +244,14 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/productos/eliminar-venta/${idcorrelativo}`, {}, options);
   }
 
+  // Método para actualizar venta
+  public actualizarVenta(venta: any): Observable<any>{
+    const headers = new HttpHeaders()
+      .set('content-type', 'application/json');
+    const options = { headers: headers };
+    return this.http.post(`${this.baseUrl}/productos/actualizar-venta`, venta, options);
+  }
+
   // Método para registrar auditoría
   public registrarAuditoria(auditoria: any): Observable<any>{
     const headers = new HttpHeaders()

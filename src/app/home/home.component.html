@@ -48,6 +48,77 @@
   </div>
 </div>
 
+<!-- Modal de Edición de Venta -->
+<div *ngIf="showEditModal" class="modal-overlay" (click)="cerrarModalEdicion()">
+  <div class="modal-dialog-edit" (click)="$event.stopPropagation()">
+    <div class="modal-header-edit">
+      <h2 class="modal-title-edit">✏️ Editar Venta</h2>
+      <button class="modal-close-btn" (click)="cerrarModalEdicion()">✕</button>
+    </div>
+    <div class="modal-body-edit">
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">ID Venta</label>
+          <input type="text" class="form-input" [value]="ventaEditando?.idventa" disabled>
+        </div>
+        
+        <div class="form-field">
+          <label class="form-label">Fecha Venta</label>
+          <input type="datetime-local" class="form-input" [(ngModel)]="ventaEditando.fechaventa">
+        </div>
+        
+        <div class="form-field">
+          <label class="form-label">Total Artículos</label>
+          <input type="number" class="form-input" [(ngModel)]="ventaEditando.totalarticulos" min="1">
+        </div>
+        
+        <div class="form-field">
+          <label class="form-label">Subtotal</label>
+          <input type="number" class="form-input" [(ngModel)]="ventaEditando.subtotalventa" (change)="recalcularTotales()">
+        </div>
+        
+        <div class="form-field">
+          <label class="form-label">IVA</label>
+          <input type="number" class="form-input" [(ngModel)]="ventaEditando.iva" (change)="recalcularTotales()">
+        </div>
+        
+        <div class="form-field">
+          <label class="form-label">Total Importe</label>
+          <input type="number" class="form-input" [(ngModel)]="ventaEditando.totalimporte" readonly>
+        </div>
+        
+        <div class="form-field">
+          <label class="form-label">Tipo Pago</label>
+          <select class="form-input" [(ngModel)]="ventaEditando.tipopago">
+            <option value="EFECTIVO">EFECTIVO</option>
+            <option value="TARJETA">TARJETA</option>
+            <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+          </select>
+        </div>
+        
+        <div class="form-field">
+          <label class="form-label">Estado Transbank</label>
+          <input type="text" class="form-input" [(ngModel)]="ventaEditando.estadotransbank">
+        </div>
+      </div>
+      
+      <div class="modal-warning" *ngIf="ventaEditando?.boletaEmitida || ventaEditando?.trazastattransbk === 'EMITIDO'">
+        ⚠️ Esta venta ya tiene una boleta emitida. Los cambios pueden afectar la conciliación.
+      </div>
+    </div>
+    
+    <div class="modal-footer-edit">
+      <button class="modal-btn modal-btn-cancel" (click)="cerrarModalEdicion()">
+        <span>Cancelar</span>
+      </button>
+      <button class="modal-btn modal-btn-save" (click)="guardarCambios()" [disabled]="guardando">
+        <span *ngIf="!guardando">💾 Guardar</span>
+        <span *ngIf="guardando">Guardando...</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Contenido principal (cuando está autenticado) -->
 <div *ngIf="isAuthenticated">
 
@@ -118,6 +189,7 @@
           <thead class="table-dark">
             <tr>
               <th>#</th>
+              <th>Editar</th>
               <th>Eliminar</th>
               <th>idventa</th><th>fechaventa</th>
               <th class="col-items">Items</th><th>Subtotal</th>
@@ -129,6 +201,19 @@
           <tbody>
             <tr *ngFor="let item of dataconsultaventas, index as id">
               <td>{{ id+1 }}</td>
+              <td>
+                <button 
+                  class="btn-editar" 
+                  (click)="abrirModalEdicion(item)"
+                  title="Editar venta">
+                  <span class="edit-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </span>
+                </button>
+              </td>
               <td>
                 <button 
                   class="btn-eliminar" 

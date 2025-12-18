@@ -64,6 +64,11 @@ export class HomeComponent {
   confirmModalData: any = null;
   private confirmCallback: (() => void) | null = null;
 
+  // Propiedades para Modal de Edición
+  showEditModal: boolean = false;
+  ventaEditando: any = null;
+  guardando: boolean = false;
+
   dataProductos : any[] = [];
   dataventas : any[] = [];
   dataestadistica: any[] = [];
@@ -854,6 +859,249 @@ export class HomeComponent {
         this.showToast('error', 'Error al Eliminar', error.error?.message || error.message || 'Error desconocido');
       }
     };
+  }
+
+  // ========== MÉTODOS PARA EDICIÓN DE VENTAS ==========
+  
+  abrirModalEdicion(item: any): void {
+    console.log('� Item completo recibido:', item);
+    console.log('📅 Todas las propiedades del item:', Object.keys(item));
+    console.log('📅 item.fechaventa:', item.fechaventa);
+    console.log('📅 item.fecha (si existe):', item.fecha);
+    console.log('📅 item.fechacreacion (si existe):', item.fechacreacion);
+    
+    // Intentar usar diferentes campos de fecha
+    let fechaCompleta = item.fechaventa;
+    
+    // Si fechaventa solo tiene hora, buscar la fecha completa en otros campos
+    if (fechaCompleta && fechaCompleta.length < 12 && fechaCompleta.includes(':')) {
+      console.log('⚠️ fechaventa solo tiene hora, buscando fecha completa...');
+      // Usar la fecha actual como fallback y combinar con la hora
+      const hoy = new Date();
+      const year = hoy.getFullYear();
+      const month = String(hoy.getMonth() + 1).padStart(2, '0');
+      const day = String(hoy.getDate()).padStart(2, '0');
+      fechaCompleta = `${day}-${month}-${year} ${item.fechaventa}`;
+      console.log('📅 Fecha construida:', fechaCompleta);
+    }
+    
+    const fechaConvertida = this.convertirFechaParaInput(fechaCompleta);
+    console.log('📅 Fecha convertida para input:', fechaConvertida);
+    
+    // Crear una copia del item para editar
+    this.ventaEditando = {
+      idcorrelativo: item.idcorrelativo,
+      idventa: item.idventa,
+      fechaventa: fechaConvertida,
+      totalarticulos: item.totalarticulos,
+      subtotalventa: Number(item.subtotalventa),
+      iva: Number(item.iva),
+      totalimporte: Number(item.totalimporte),
+      tipopago: item.tipopago,
+      estadotransbank: item.estadotransbank || '',
+      boletaEmitida: item.boletaEmitida,
+      trazastattransbk: item.trazastattransbk,
+      numeroFolio: item.numeroFolio
+    };
+    
+    console.log('🔍 Venta editando completa:', this.ventaEditando);
+    this.showEditModal = true;
+  }
+
+  convertirFechaParaInput(fecha: any): string {
+    // Convertir el formato de fecha para el input datetime-local
+    if (!fecha) {
+      console.warn('⚠️ Fecha vacía o nula');
+      return '';
+    }
+    
+    try {
+      let fechaObj: Date;
+      
+      if (typeof fecha === 'number') {
+        // Si es un timestamp numérico
+        fechaObj = new Date(fecha);
+        console.log('📅 Fecha desde timestamp:', fechaObj);
+      } else if (typeof fecha === 'string') {
+        // Si viene en formato "DD-MM-YYYY HH:mm:ss" (formato chileno)
+        if (fecha.includes('-') && fecha.split('-')[0].length === 2) {
+          const partes = fecha.split(' ');
+          const fechaParts = partes[0].split('-');
+          const horaParts = partes[1] ? partes[1].split(':') : ['00', '00', '00'];
+          
+          fechaObj = new Date(
+            parseInt(fechaParts[2]),  // año
+            parseInt(fechaParts[1]) - 1,  // mes (0-11)
+            parseInt(fechaParts[0]),  // día
+            parseInt(horaParts[0]),  // hora
+            parseInt(horaParts[1]),  // minutos
+            parseInt(horaParts[2])   // segundos
+          );
+          console.log('📅 Fecha desde formato DD-MM-YYYY:', fechaObj);
+        } 
+        // Si viene en formato "YYYY-MM-DD HH:mm:ss" o ISO
+        else if (fecha.includes('-') && fecha.split('-')[0].length === 4) {
+          fechaObj = new Date(fecha.replace(' ', 'T'));
+          console.log('📅 Fecha desde formato YYYY-MM-DD:', fechaObj);
+        }
+        // Intentar parsearlo directamente
+        else {
+          fechaObj = new Date(fecha);
+          console.log('📅 Fecha desde parse directo:', fechaObj);
+        }
+      } else if (fecha instanceof Date) {
+        fechaObj = fecha;
+        console.log('📅 Fecha ya es objeto Date:', fechaObj);
+      } else {
+        console.error('❌ Formato de fecha desconocido:', typeof fecha, fecha);
+        return '';
+      }
+      
+      // Validar que la fecha sea válida
+      if (isNaN(fechaObj.getTime())) {
+        console.error('❌ Fecha inválida después de conversión:', fecha);
+        return '';
+      }
+      
+      // Convertir a formato datetime-local (YYYY-MM-DDTHH:mm)
+      const year = fechaObj.getFullYear();
+      const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+      const day = String(fechaObj.getDate()).padStart(2, '0');
+      const hours = String(fechaObj.getHours()).padStart(2, '0');
+      const minutes = String(fechaObj.getMinutes()).padStart(2, '0');
+      
+      const resultado = `${year}-${month}-${day}T${hours}:${minutes}`;
+      console.log('✅ Fecha convertida exitosamente:', resultado);
+      return resultado;
+    } catch (error) {
+      console.error('❌ Error al convertir fecha:', error, 'Fecha original:', fecha);
+      return '';
+    }
+  }
+
+  recalcularTotales(): void {
+    if (this.ventaEditando) {
+      this.ventaEditando.totalimporte = 
+        Number(this.ventaEditando.subtotalventa) + 
+        Number(this.ventaEditando.iva);
+    }
+  }
+
+  cerrarModalEdicion(): void {
+    this.showEditModal = false;
+    this.ventaEditando = null;
+    this.guardando = false;
+  }
+
+  async guardarCambios(): Promise<void> {
+    if (!this.ventaEditando || !this.ventaEditando.idcorrelativo) {
+      this.showToast('error', 'Error', 'No se puede guardar: datos inválidos');
+      return;
+    }
+
+    // Validaciones básicas
+    if (this.ventaEditando.totalarticulos < 1) {
+      this.showToast('error', 'Validación', 'El total de artículos debe ser mayor a 0');
+      return;
+    }
+
+    if (this.ventaEditando.totalimporte <= 0) {
+      this.showToast('error', 'Validación', 'El total importe debe ser mayor a 0');
+      return;
+    }
+
+    this.guardando = true;
+
+    try {
+      // Obtener geolocalización
+      const geoData = await this.obtenerGeolocalizacion();
+
+      // Preparar datos para actualización
+      const ventaActualizada = {
+        idcorrelativo: this.ventaEditando.idcorrelativo,
+        fechaventa: this.convertirFechaParaBackend(this.ventaEditando.fechaventa),
+        totalarticulos: this.ventaEditando.totalarticulos,
+        subtotalventa: this.ventaEditando.subtotalventa,
+        iva: this.ventaEditando.iva,
+        totalimporte: this.ventaEditando.totalimporte,
+        tipopago: this.ventaEditando.tipopago,
+        estadotransbank: this.ventaEditando.estadotransbank
+      };
+
+      // Llamar al servicio de actualización
+      await this.api.actualizarVenta(ventaActualizada).toPromise();
+
+      // Preparar auditoría
+      const auditoria = {
+        hostorigen: geoData.query || 'localhost',
+        modulo: '/api/productos/actualizar-venta',
+        accionrealizada: 'Actualización de venta',
+        usuario: this.username || 'admin',
+        detalles: `Edición de venta #${this.ventaEditando.idcorrelativo} | Precisión: ${geoData.precision} | ISP: ${geoData.isp} | Exactitud: ${geoData.accuracy ? Math.round(geoData.accuracy) + 'm' : 'N/A'}`,
+        dataprocesada: JSON.stringify({
+          ventaOriginal: this.confirmModalData,
+          ventaActualizada: ventaActualizada,
+          geolocalizacion: {
+            precision: geoData.precision,
+            accuracy: geoData.accuracy,
+            address: geoData.address,
+            road: geoData.road,
+            neighbourhood: geoData.neighbourhood,
+            postcode: geoData.postcode,
+            isp: geoData.isp,
+            timezone: geoData.timezone,
+            userAgent: geoData.userAgent,
+            platform: geoData.platform,
+            timestamp: geoData.timestamp
+          }
+        }),
+        latitud: geoData.lat || 0,
+        longitud: geoData.lon || 0,
+        ciudad: geoData.city || 'Desconocida',
+        region: geoData.regionName || 'Desconocida',
+        pais: geoData.country || 'Chile'
+      };
+
+      // Registrar auditoría
+      await this.api.registrarAuditoria(auditoria).toPromise();
+
+      // Mostrar toast de éxito
+      this.showToast('success', 'Venta Actualizada', 'Los cambios han sido guardados exitosamente');
+
+      // Cerrar modal
+      this.cerrarModalEdicion();
+
+      // Recargar datos después de 1 segundo
+      setTimeout(() => {
+        this.getVentasDia();
+      }, 1000);
+
+    } catch (error: any) {
+      console.error('Error al actualizar venta:', error);
+      this.guardando = false;
+      this.showToast('error', 'Error al Actualizar', error.error?.message || error.message || 'Error desconocido');
+    }
+  }
+
+  convertirFechaParaBackend(fechaInput: string): string {
+    // Convertir al formato ISO que espera el backend: yyyy-MM-dd'T'HH:mm:ss
+    if (!fechaInput) return '';
+    
+    try {
+      const fecha = new Date(fechaInput);
+      const year = fecha.getFullYear();
+      const month = String(fecha.getMonth() + 1).padStart(2, '0');
+      const day = String(fecha.getDate()).padStart(2, '0');
+      const hours = String(fecha.getHours()).padStart(2, '0');
+      const minutes = String(fecha.getMinutes()).padStart(2, '0');
+      const seconds = String(fecha.getSeconds()).padStart(2, '0');
+      
+      // Formato ISO: yyyy-MM-ddTHH:mm:ss
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    } catch (error) {
+      console.error('Error al convertir fecha para backend:', error);
+      return '';
+    }
   }
 
   // Método para obtener geolocalización: GPS primero, fallback a IP si usuario rechaza
