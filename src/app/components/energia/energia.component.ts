@@ -43,7 +43,7 @@ export class EnergiaComponent implements OnDestroy {
   changedFecha: Date = new Date();
 
   // Nuevos nodos y datos de power
-  nodos: string[] = ['T163', 'T221', 'T77', 'T26'];
+  nodos: string[] = ['T163', 'T221', 'T77', 'T26', 'T72'];
   nodoSeleccionado: string = 'T163'; // Nodo por defecto
   powerData: { [key: string]: number } = {}; // Power actual de cada nodo (última medición)
   fechameasData: { [key: string]: string } = {}; // Fecha/hora de la última medición de cada nodo
@@ -55,7 +55,8 @@ export class EnergiaComponent implements OnDestroy {
     'T163': 'Cons. Negocio',
     'T221': 'PanelSolar Fondo',
     'T77': 'Cons. CasaFondo',
-    'T26': 'Cons. CasaCentro'
+    'T26': 'Cons. CasaCentro',
+    'T72': 'PanelSolar Negocio'
   };
 
   pipe = new DatePipe('en-US');
