@@ -28,6 +28,7 @@
       <button class="refresh-button" (click)="refrescarPowerNodos()">🔄 Actualizar</button>
     </div>
     <div class="gauges-grid">
+      <!-- Medidores de Power -->
       <div class="gauge-card" *ngFor="let nodo of nodos; trackBy: trackByNodo">
         <div class="nodo-info-card">
           <div class="nodo-code">{{nodo}}</div>
@@ -49,6 +50,25 @@
             [margin]="[3, 10, 3, 10]">
           </ngx-charts-gauge>
           <div class="gauge-timestamp">{{fechameasData[nodo] || 'N/A'}}</div>
+        </div>
+      </div>
+
+      <!-- Termómetros (después de T72) -->
+      <div class="thermometer-card" *ngFor="let thermometer of thermometers; trackBy: trackByThermometer">
+        <div class="nodo-info-card">
+          <div class="nodo-code">🌡️</div>
+          <div class="nodo-descripcion">{{thermometer.nombre}}</div>
+        </div>
+        <div class="thermometer-wrapper">
+          <div class="temperature-display" [ngClass]="getTemperatureClass(thermometer.valor)">
+            <span class="temperature-value" *ngIf="!thermometer.error && thermometer.valor !== null">
+              {{thermometer.valor | number:'1.1-1'}}°C
+            </span>
+            <span class="temperature-error" *ngIf="thermometer.error || thermometer.valor === null">
+              Error
+            </span>
+          </div>
+          <div class="gauge-timestamp">{{thermometer.ultimaActualizacion}}</div>
         </div>
       </div>
     </div>

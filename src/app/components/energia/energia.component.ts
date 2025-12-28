@@ -8,6 +8,29 @@ import { takeUntil } from 'rxjs/operators';
 import { Client } from '@stomp/stompjs';
 import * as SockJS from 'sockjs-client';
 import { environment } from '../../../environments/environment';
+import { HttpClient } from '@angular/common/http';
+
+// Interfaces para termómetros
+interface TemperatureSensor {
+  error: boolean;
+  temperature: number;
+}
+
+interface TemperatureResponse {
+  nroSensoresConfig: number;
+  numSensorsDetected: number;
+  timestamp: number;
+  sensor1: TemperatureSensor;
+}
+
+interface ThermometerConfig {
+  id: string;
+  nombre: string;
+  url: string;
+  valor: number | null;
+  error: boolean;
+  ultimaActualizacion: string;
+}
 
 @Component({
   selector: 'app-energia',
@@ -59,6 +82,30 @@ export class EnergiaComponent implements OnDestroy {
     'T72': 'PanelSolar Negocio'
   };
 
+  // Configuración modular de termómetros
+  // Para agregar más termómetros, simplemente añadir objetos al arreglo
+  // IMPORTANTE: Las URLs van directo a la IP del sensor (sin proxy)
+  // El servidor del sensor DEBE tener CORS habilitado para aceptar peticiones desde localhost:4200
+  thermometers: ThermometerConfig[] = [
+    {
+      id: 'temp1',
+      nombre: 'Temperatura',
+      url: 'http://192.168.2.110/api/temperature',
+      valor: null,
+      error: false,
+      ultimaActualizacion: 'N/A'
+    }
+    // Para agregar más termómetros, descomentar y configurar:
+    // {
+    //   id: 'temp2',
+    //   nombre: 'Temperatura Ext',
+    //   url: 'http://192.168.2.111/api/temperature',
+    //   valor: null,
+    //   error: false,
+    //   ultimaActualizacion: 'N/A'
+    // }
+  ];
+
   pipe = new DatePipe('en-US');
   newDate: string= "";
 
@@ -67,7 +114,8 @@ export class EnergiaComponent implements OnDestroy {
   constructor(
     private ApiService: ApiService, 
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private http: HttpClient
   ) {
   }
 
@@ -83,6 +131,9 @@ export class EnergiaComponent implements OnDestroy {
 
     // Obtener valor del kilowatt desde la configuración y LUEGO cargar datos
     this.cargarValorKilowatt();
+    
+    // Cargar datos de termómetros
+    this.cargarTermometros();
     
     // Inicializar WebSocket después de cargar datos iniciales
     setTimeout(() => this.initWebSocket(), 2000);
@@ -716,6 +767,90 @@ export class EnergiaComponent implements OnDestroy {
       console.log('🔌 WebSocket desconectado manualmente');
       this.cdr.markForCheck();
     }
+  }
+
+  // ========== MÉTODOS PARA TERMÓMETROS ==========
+  
+  /**
+   * Cargar datos de todos los termómetros configurados
+   * Método modular: itera sobre el array de configuración
+   */
+  cargarTermometros(): void {
+    console.log('🌡️ Cargando datos de termómetros...');
+    
+    this.thermometers.forEach(thermometer => {
+      this.cargarTemperaturaIndividual(thermometer);
+    });
+  }
+
+  /**
+   * Cargar temperatura de un termómetro individual
+   * @param thermometer Configuración del termómetro
+   */
+  private cargarTemperaturaIndividual(thermometer: ThermometerConfig): void {
+    this.http.get<TemperatureResponse>(thermometer.url)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: TemperatureResponse) => {
+          console.log(`✅ Respuesta termómetro ${thermometer.nombre}:`, response);
+          
+          if (response.sensor1 && !response.sensor1.error) {
+            thermometer.valor = response.sensor1.temperature;
+            thermometer.error = false;
+            
+            // Formatear timestamp si está disponible
+            if (response.timestamp) {
+              const fecha = new Date(response.timestamp * 1000); // timestamp en segundos
+              thermometer.ultimaActualizacion = this.pipe.transform(fecha, 'HH:mm:ss') || 'N/A';
+            } else {
+              thermometer.ultimaActualizacion = 'Ahora';
+            }
+            
+            console.log(`🌡️ ${thermometer.nombre}: ${thermometer.valor}°C`);
+          } else {
+            thermometer.valor = null;
+            thermometer.error = true;
+            thermometer.ultimaActualizacion = 'Error';
+            console.error(`❌ Error en sensor ${thermometer.nombre}`);
+          }
+          
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          console.error(`❌ Error cargando ${thermometer.nombre}:`, error);
+          thermometer.valor = null;
+          thermometer.error = true;
+          thermometer.ultimaActualizacion = 'Error';
+          this.cdr.markForCheck();
+        }
+      });
+  }
+
+  /**
+   * Refrescar todos los termómetros
+   * Puede ser llamado manualmente o por un interval
+   */
+  refrescarTermometros(): void {
+    this.cargarTermometros();
+  }
+
+  /**
+   * Obtener clase CSS según el valor de temperatura
+   * @param valor Temperatura en °C
+   */
+  getTemperatureClass(valor: number | null): string {
+    if (valor === null) return 'temp-error';
+    if (valor < 15) return 'temp-cold';
+    if (valor >= 15 && valor < 25) return 'temp-normal';
+    if (valor >= 25 && valor < 30) return 'temp-warm';
+    return 'temp-hot';
+  }
+
+  /**
+   * TrackBy function para optimizar el ngFor de termómetros
+   */
+  trackByThermometer(index: number, thermometer: ThermometerConfig): string {
+    return thermometer.id;
   }
 
 }
