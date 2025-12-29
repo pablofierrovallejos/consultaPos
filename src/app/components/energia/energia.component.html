@@ -32,11 +32,16 @@
       <div class="gauge-card" *ngFor="let nodo of nodos; trackBy: trackByNodo">
         <div class="nodo-info-card">
           <div class="nodo-code">{{nodo}}</div>
-          <div class="nodo-descripcion">{{nodosDescripcion[nodo]}}</div>
+          <div class="nodo-descripcion">
+            {{nodosDescripcion[nodo]}}
+            <span class="icono-solar" *ngIf="(nodo === 'T221' || nodo === 'T72') && powerData[nodo] >= 100">🔆</span>
+            <span class="icono-solar" *ngIf="(nodo === 'T221' || nodo === 'T72') && powerData[nodo] < 100">☁️</span>
+            <span class="icono-consumo" *ngIf="nodo === 'T163' || nodo === 'T77' || nodo === 'T26'">🔌</span>
+          </div>
         </div>
         <div class="gauge-wrapper">
           <ngx-charts-gauge
-            [view]="[140, 110]"
+            [view]="[130, 100]"
             [scheme]="getGaugeColorScheme(nodo)"
             [results]="[{ name: nodo, value: powerData[nodo] || 0 }]"
             [min]="0"
@@ -50,6 +55,15 @@
             [margin]="[3, 10, 3, 10]">
           </ngx-charts-gauge>
           <div class="gauge-timestamp">{{fechameasData[nodo] || 'N/A'}}</div>
+        </div>
+        <div class="nodo-energia-card">
+          <div class="energia-label">Tot. Energía hoy:</div>
+          <div class="energia-valor">
+            <ng-container *ngIf="energiaDiaData[nodo] !== undefined && energiaDiaData[nodo] !== null; else noData">
+              {{formatearEnergia(energiaDiaData[nodo])}} kWh
+            </ng-container>
+            <ng-template #noData>N/A</ng-template>
+          </div>
         </div>
       </div>
 
@@ -84,13 +98,21 @@
           ⚡ Potencia consumida Watts por día {{ChangedFormatDisplay}} - Todos los Nodos
           <span class="valor-kwh">Valor kWh: ${{valorKilowatt}}</span>
         </h2>
+        <div class="nodos-filter">
+          <label *ngFor="let nodo of nodos" class="checkbox-label">
+            <input type="checkbox" 
+                   [checked]="nodosVisibles[nodo]" 
+                   (change)="toggleNodoVisibilidad(nodo)">
+            <span>{{nodosDescripcion[nodo]}}</span>
+          </label>
+        </div>
       </div>
       <div class="card-body">
         <div class="chart-container">
           <ngx-charts-line-chart
             [view]="view"
             [scheme]="colorSchemeMeas"
-            [results]="datameasTodosNodos"
+            [results]="datameasTodosNodosFiltrados"
             [xAxis]="showXAxis"
             [yAxis]="showYAxis"
             [legend]="true"

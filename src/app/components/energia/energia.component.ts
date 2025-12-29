@@ -80,6 +80,15 @@ export class EnergiaComponent implements OnDestroy {
   fechameasData: { [key: string]: string } = {}; // Fecha/hora de la última medición de cada nodo
   maxPower: number = 3500; // Rango máximo de power en watts
   dataPorNodo: { [key: string]: any[] } = {}; // Guardar datos de cada nodo
+  energiaDiaData: { [key: string]: number } = {}; // Diferencia de energía del día (última - primera medición)
+  nodosVisibles: { [key: string]: boolean } = { // Control de visibilidad de nodos en gráfico
+    'T163': true,
+    'T221': true,
+    'T77': true,
+    'T26': true,
+    'T72': true
+  };
+  datameasTodosNodosFiltrados: any[] = []; // Datos filtrados según checkboxes
   
   // Descripciones de los nodos
   nodosDescripcion: { [key: string]: string } = {
@@ -288,13 +297,18 @@ export class EnergiaComponent implements OnDestroy {
             
             datosPorNodo[nodo] = transformedData;
             
+            // Calcular diferencia de energía del día (última - primera medición)
+            this.calcularEnergiaDia(nodo, dataArray);
+            
             console.log(`✅ Datos procesados para ${nodo}:`, datosPorNodo[nodo].length, 'puntos');
             console.log(`📊 Muestra de datos transformados:`, datosPorNodo[nodo].slice(0, 3));
+            console.log(`⚡ Energía calculada para ${nodo}:`, this.energiaDiaData[nodo]);
             
             completados++;
             if (completados === total) {
               // Todos los nodos cargados, transformar a formato multi-línea
               this.datameasTodosNodos = this.transformarAMultiLinea(datosPorNodo);
+              this.datameasTodosNodosFiltrados = [...this.datameasTodosNodos]; // Copia inicial
               console.log('✅ Datos multi-línea cargados:', this.datameasTodosNodos.length, 'series');
               console.log('📊 Estructura final:', JSON.stringify(this.datameasTodosNodos, null, 2));
               this.cdr.markForCheck();
@@ -308,12 +322,45 @@ export class EnergiaComponent implements OnDestroy {
             completados++;
             if (completados === total) {
               this.datameasTodosNodos = this.transformarAMultiLinea(datosPorNodo);
+              this.datameasTodosNodosFiltrados = [...this.datameasTodosNodos]; // Copia inicial
               console.log('⚠️ Datos multi-línea cargados con errores');
               this.cdr.markForCheck();
             }
           }
         });
     });
+  }
+  
+  // Calcular diferencia de energía del día (última medición - primera medición)
+  private calcularEnergiaDia(nodo: string, dataArray: any[]): void {
+    console.log(`🔍 Calculando energía para ${nodo}, datos recibidos:`, dataArray?.length || 0, 'registros');
+    
+    if (!dataArray || dataArray.length === 0) {
+      this.energiaDiaData[nodo] = 0;
+      console.log(`⚠️ ${nodo}: Sin datos para calcular energía del día`);
+      return;
+    }
+    
+    // Obtener primer y último registro del día
+    const primerRegistro = dataArray[0];
+    const ultimoRegistro = dataArray[dataArray.length - 1];
+    
+    console.log(`📊 ${nodo} - Primer registro:`, primerRegistro);
+    console.log(`📊 ${nodo} - Último registro:`, ultimoRegistro);
+    
+    const energiaPrimera = parseFloat(primerRegistro?.energy) || 0;
+    const energiaUltima = parseFloat(ultimoRegistro?.energy) || 0;
+    
+    // Calcular diferencia
+    const diferencia = energiaUltima - energiaPrimera;
+    
+    this.energiaDiaData[nodo] = diferencia;
+    
+    console.log(`⚡ ${nodo} - Energía del día: ${diferencia.toFixed(3)} kWh (Primera: ${energiaPrimera}, Última: ${energiaUltima})`);
+    console.log(`📦 Estado completo de energiaDiaData:`, JSON.stringify(this.energiaDiaData, null, 2));
+    
+    // Forzar detección de cambios para actualizar la vista
+    this.cdr.markForCheck();
   }
   
   // Transformar datos de múltiples nodos a formato multi-línea de ngx-charts
@@ -323,13 +370,14 @@ export class EnergiaComponent implements OnDestroy {
     // Mapeo de nombres de nodos a descripciones
     const nombreDescripcion: { [key: string]: string } = {
       'T163': 'Negocio',
-      'T221': 'PanelSolar',
+      'T221': 'PanelSolarFondo',
       'T77': 'CasaFondo',
-      'T26': 'CasaCentro'
+      'T26': 'CasaCentro',
+      'T72': 'PanelSolarNegocio'
     };
     
     this.nodos.forEach(nodo => {
-      if (datosPorNodo[nodo] && datosPorNodo[nodo].length > 0) {
+      if (datosPorNodo[nodo] && datosPorNodo[nodo].length > 0 && this.nodosVisibles[nodo]) {
         resultado.push({
           name: nombreDescripcion[nodo] || nodo,
           series: datosPorNodo[nodo]
@@ -338,6 +386,27 @@ export class EnergiaComponent implements OnDestroy {
     });
     
     return resultado;
+  }
+  
+  // Método para alternar visibilidad de un nodo en el gráfico
+  toggleNodoVisibilidad(nodo: string): void {
+    this.nodosVisibles[nodo] = !this.nodosVisibles[nodo];
+    // Re-filtrar datos
+    this.datameasTodosNodosFiltrados = this.datameasTodosNodos.filter(serie => {
+      // Encontrar el nodo correspondiente a esta serie
+      const nodoKey = Object.keys(this.nodosVisibles).find(key => {
+        const nombreDescripcion: { [key: string]: string } = {
+          'T163': 'Negocio',
+          'T221': 'PanelSolarFondo',
+          'T77': 'CasaFondo',
+          'T26': 'CasaCentro',
+          'T72': 'PanelSolarNegocio'
+        };
+        return nombreDescripcion[key] === serie.name;
+      });
+      return nodoKey && this.nodosVisibles[nodoKey];
+    });
+    this.cdr.markForCheck();
   }
 
   // Método para cargar el último valor de power de todos los nodos
@@ -600,6 +669,14 @@ export class EnergiaComponent implements OnDestroy {
     return nodo;
   }
 
+  // Método para formatear energía con coma como separador decimal y 1 dígito
+  formatearEnergia(valor: number): string {
+    if (valor === null || valor === undefined || isNaN(valor)) {
+      return 'N/A';
+    }
+    return valor.toFixed(1).replace('.', ',');
+  }
+
   // Método para calcular el porcentaje de power para el gauge
   getPowerPercentage(nodo: string): number {
     const power = this.powerData[nodo] || 0;
@@ -608,6 +685,11 @@ export class EnergiaComponent implements OnDestroy {
 
   // Método para obtener el color del gauge según el nivel de power
   getGaugeColor(nodo: string): string {
+    // Los nodos de paneles solares (T221 y T72) siempre en verde (generan energía)
+    if (nodo === 'T221' || nodo === 'T72') {
+      return '#00FF00'; // Verde siempre para paneles solares
+    }
+    
     const power = this.powerData[nodo] || 0;
     const percentage = (power / this.maxPower) * 100;
     

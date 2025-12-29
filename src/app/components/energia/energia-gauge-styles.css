@@ -123,7 +123,7 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 10px;
   padding: 6px 12px;
-  margin-bottom: 15px;
+  margin-bottom: 8px;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   text-align: center;
   display: flex;
@@ -146,6 +146,53 @@
   font-weight: 600;
   color: rgba(255, 255, 255, 0.95);
   letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icono-solar {
+  font-size: 2em;
+  line-height: 1;
+  margin-left: 4px;
+}
+
+.icono-consumo {
+  font-size: 2em;
+  line-height: 1;
+  margin-left: 4px;
+}
+
+/* Tarjeta de energía del día al pie del gauge */
+.nodo-energia-card {
+  width: 100%;
+  background: linear-gradient(135deg, #0d7a6f 0%, #28c75f 100%);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-top: 15px;
+  box-shadow: 0 4px 15px rgba(13, 122, 111, 0.4);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.energia-label {
+  font-size: 0.65em;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.energia-valor {
+  font-size: 0.85em;
+  font-weight: 800;
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .gauge-wrapper {
@@ -155,7 +202,7 @@
   align-items: center;
   width: 100%;
   margin: 0;
-  margin-top: 10px;
+  margin-top: 40px;
 }
 
 .gauge-timestamp {
