@@ -8,7 +8,6 @@ import { takeUntil } from 'rxjs/operators';
 import { Client } from '@stomp/stompjs';
 import * as SockJS from 'sockjs-client';
 import { environment } from '../../../environments/environment';
-import { HttpClient } from '@angular/common/http';
 
 // Interfaces para termómetros
 interface TemperatureSensor {
@@ -23,10 +22,19 @@ interface TemperatureResponse {
   sensor1: TemperatureSensor;
 }
 
+// Interface para datos de temperatura desde el backend
+interface TemperaturaData {
+  id?: number;
+  nombrenodo: string;
+  temperatura: number;
+  fechahora: string;
+  device_ip?: string;
+}
+
 interface ThermometerConfig {
   id: string;
   nombre: string;
-  url: string;
+  nombrenodo: string; // Nombre del nodo en el backend (ej: T110)
   valor: number | null;
   error: boolean;
   ultimaActualizacion: string;
@@ -84,13 +92,13 @@ export class EnergiaComponent implements OnDestroy {
 
   // Configuración modular de termómetros
   // Para agregar más termómetros, simplemente añadir objetos al arreglo
-  // IMPORTANTE: Las URLs van directo a la IP del sensor (sin proxy)
-  // El servidor del sensor DEBE tener CORS habilitado para aceptar peticiones desde localhost:4200
+  // Los datos se obtienen desde el microservicio ms-concentrador-energia
+  // Endpoint: /api/energia/temperatura/ultimas/{nombrenodo}?limit=1
   thermometers: ThermometerConfig[] = [
     {
       id: 'temp1',
       nombre: 'Temperatura',
-      url: 'http://192.168.2.110/api/temperature',
+      nombrenodo: 'T110', // Nodo configurado en el backend
       valor: null,
       error: false,
       ultimaActualizacion: 'N/A'
@@ -99,7 +107,7 @@ export class EnergiaComponent implements OnDestroy {
     // {
     //   id: 'temp2',
     //   nombre: 'Temperatura Ext',
-    //   url: 'http://192.168.2.111/api/temperature',
+    //   nombrenodo: 'T111',
     //   valor: null,
     //   error: false,
     //   ultimaActualizacion: 'N/A'
@@ -114,8 +122,7 @@ export class EnergiaComponent implements OnDestroy {
   constructor(
     private ApiService: ApiService, 
     private router: Router,
-    private cdr: ChangeDetectorRef,
-    private http: HttpClient
+    private cdr: ChangeDetectorRef
   ) {
   }
 
@@ -709,7 +716,7 @@ export class EnergiaComponent implements OnDestroy {
       return;
     }
     
-    // Suscribirse a cada nodo
+    // Suscribirse a cada nodo de energía
     this.nodos.forEach(nodo => {
       const topic = `/topic/estadistica/${nodo}`;
       this.stompClient!.subscribe(topic, (message) => {
@@ -722,6 +729,21 @@ export class EnergiaComponent implements OnDestroy {
         }
       });
       console.log(`✅ Suscrito a: ${topic}`);
+    });
+    
+    // Suscribirse a los nodos de temperatura
+    this.thermometers.forEach(thermometer => {
+      const topic = `/topic/temperatura/${thermometer.nombrenodo}`;
+      this.stompClient!.subscribe(topic, (message) => {
+        try {
+          const notification = JSON.parse(message.body);
+          console.log(`🌡️ Notificación de temperatura recibida para ${thermometer.nombrenodo}:`, notification);
+          this.handleTemperatureWebSocketNotification(thermometer, notification);
+        } catch (error) {
+          console.error('❌ Error al procesar notificación de temperatura:', error);
+        }
+      });
+      console.log(`✅ Suscrito a temperatura: ${topic}`);
     });
     
     // También suscribirse al topic global
@@ -759,6 +781,34 @@ export class EnergiaComponent implements OnDestroy {
     }
   }
   
+  /**
+   * Maneja las notificaciones de temperatura recibidas por WebSocket
+   * @param thermometer Configuración del termómetro
+   * @param notification Datos de la notificación
+   */
+  handleTemperatureWebSocketNotification(thermometer: ThermometerConfig, notification: any): void {
+    if (notification.data) {
+      const data = notification.data;
+      
+      // Actualizar temperatura
+      if (data.temperatura !== undefined && data.temperatura !== null) {
+        thermometer.valor = parseFloat(data.temperatura);
+        thermometer.error = false;
+      }
+      
+      // Actualizar timestamp
+      if (data.fechahora) {
+        const fecha = new Date(data.fechahora);
+        thermometer.ultimaActualizacion = this.pipe.transform(fecha, 'HH:mm:ss') || 'N/A';
+      }
+      
+      // Marcar para detección de cambios
+      this.cdr.markForCheck();
+      
+      console.log(`✅ Temperatura actualizada ${thermometer.nombrenodo}: ${thermometer.valor}°C a las ${thermometer.ultimaActualizacion}`);
+    }
+  }
+  
   disconnectWebSocket(): void {
     if (this.stompClient) {
       this.stompClient.deactivate();
@@ -785,33 +835,37 @@ export class EnergiaComponent implements OnDestroy {
 
   /**
    * Cargar temperatura de un termómetro individual
+   * Obtiene la última medición desde el microservicio ms-concentrador-energia
    * @param thermometer Configuración del termómetro
    */
   private cargarTemperaturaIndividual(thermometer: ThermometerConfig): void {
-    this.http.get<TemperatureResponse>(thermometer.url)
+    // Obtener la última medición (limit=1) desde el backend
+    this.ApiService.getTemperaturaUltimas(thermometer.nombrenodo, 1)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response: TemperatureResponse) => {
-          console.log(`✅ Respuesta termómetro ${thermometer.nombre}:`, response);
+        next: (response: TemperaturaData[]) => {
+          console.log(`✅ Respuesta temperatura ${thermometer.nombre} (${thermometer.nombrenodo}):`, response);
           
-          if (response.sensor1 && !response.sensor1.error) {
-            thermometer.valor = response.sensor1.temperature;
+          // El backend retorna un array, tomar el primer elemento
+          if (response && response.length > 0) {
+            const data = response[0];
+            thermometer.valor = data.temperatura;
             thermometer.error = false;
             
-            // Formatear timestamp si está disponible
-            if (response.timestamp) {
-              const fecha = new Date(response.timestamp * 1000); // timestamp en segundos
+            // Formatear timestamp desde fechahora
+            if (data.fechahora) {
+              const fecha = new Date(data.fechahora);
               thermometer.ultimaActualizacion = this.pipe.transform(fecha, 'HH:mm:ss') || 'N/A';
             } else {
               thermometer.ultimaActualizacion = 'Ahora';
             }
             
-            console.log(`🌡️ ${thermometer.nombre}: ${thermometer.valor}°C`);
+            console.log(`🌡️ ${thermometer.nombre}: ${thermometer.valor}°C a las ${thermometer.ultimaActualizacion}`);
           } else {
             thermometer.valor = null;
             thermometer.error = true;
-            thermometer.ultimaActualizacion = 'Error';
-            console.error(`❌ Error en sensor ${thermometer.nombre}`);
+            thermometer.ultimaActualizacion = 'Sin datos';
+            console.warn(`⚠️ No hay datos para ${thermometer.nombre} (${thermometer.nombrenodo})`);
           }
           
           this.cdr.markForCheck();

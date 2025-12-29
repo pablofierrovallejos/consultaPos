@@ -48,6 +48,10 @@ export class ApiService {
   private urlconsultMultiMeasMes = this.baseUrl +'/energia/consultar-consumo-mes2/';
   private urlconsultaPowerNodo = this.baseUrl +'/energia/consultar-power/';
   private urlconsultaImagenCliente = this.baseUrl +'/productos/consultar-imagencli';
+  
+  // URLs para temperatura
+  private urlTemperaturaUltimas = this.baseUrl + '/energia/temperatura/ultimas/';
+  private urlTemperaturaDia = this.baseUrl + '/energia/temperatura/';
 
   // Lista de nodos disponibles
   nodos: string[] = ['T163', 'T221', 'T77', 'T26'];
@@ -284,6 +288,26 @@ export class ApiService {
       .set('content-type', 'application/json');
     const options = { headers: headers };
     return this.http.post(`${this.baseUrl}/productos/vending/${id}/imagen`, { imagen }, options);
+  }
+
+  // ==================== MÉTODOS DE TEMPERATURA ====================
+  
+  /**
+   * Obtiene las últimas N mediciones de temperatura de un nodo
+   * @param nombrenodo Nombre del nodo (ej: T110)
+   * @param limit Cantidad de mediciones a obtener (default: 10)
+   */
+  public getTemperaturaUltimas(nombrenodo: string, limit: number = 10): Observable<any>{
+    return this.http.get<any>(`${this.urlTemperaturaUltimas}${nombrenodo}?limit=${limit}`);
+  }
+
+  /**
+   * Obtiene todas las temperaturas de un día específico
+   * @param nombrenodo Nombre del nodo (ej: T110)
+   * @param fecha Fecha en formato yyyy-MM-dd (ej: 2025-12-28)
+   */
+  public getTemperaturaDia(nombrenodo: string, fecha: string): Observable<any>{
+    return this.http.get<any>(`${this.urlTemperaturaDia}${nombrenodo}/${fecha}`);
   }
 
 }
