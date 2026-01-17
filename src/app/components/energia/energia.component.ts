@@ -49,12 +49,33 @@ interface ThermometerConfig {
 export class EnergiaComponent implements OnDestroy {
   private destroy$ = new Subject<void>();
   private isLoadingPower = false; // Bandera para evitar llamadas simultáneas
-  private readonly MAX_DATA_POINTS = 100; // Límite máximo de datos para gráficos
+  private readonly MAX_DATA_POINTS = 100; // Límite para gráficos individuales (no afecta día completo)
   
   // WebSocket
   private stompClient: Client | null = null;
+  private wsReconnectAttempts = 0;
+  private readonly MAX_RECONNECT_ATTEMPTS = 10;
+  private wsReconnectTimer: any = null;
+  private wsSubscriptions: any[] = [];
   wsConnected = false;
   wsError = false;
+  
+  // Debounce para notificaciones WebSocket (2 segundos)
+  private wsNotificationQueue: Map<string, any> = new Map();
+  private wsProcessingTimer: any = null;
+  private readonly WS_DEBOUNCE_TIME = 2000;
+  
+  // Throttle para ChangeDetection
+  private lastChangeDetection = 0;
+  private readonly MIN_CHANGE_DETECTION_INTERVAL = 500;
+  private changeDetectionTimeout: any = null;
+  
+  // Detector de visibilidad de pestaña
+  private isPageVisible = true;
+  private visibilityChangeHandler: any = null;
+  
+  // Limpieza periódica (menos agresiva)
+  private memoryCleanupInterval: any = null;
   
   ChangedFormat='';
   ChangedFormatDisplay=''; // Formato DD-MM-YY para mostrar en headers
@@ -145,6 +166,9 @@ export class EnergiaComponent implements OnDestroy {
                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     this.nombreMesActual = meses[this.changed.getMonth()];
 
+    // Configurar detector de visibilidad de pestaña
+    this.setupPageVisibilityDetection();
+
     // Obtener valor del kilowatt desde la configuración y LUEGO cargar datos
     this.cargarValorKilowatt();
     
@@ -153,6 +177,11 @@ export class EnergiaComponent implements OnDestroy {
     
     // Inicializar WebSocket después de cargar datos iniciales
     setTimeout(() => this.initWebSocket(), 2000);
+    
+    // Limpieza periódica muy suave (cada 10 minutos, no cada 5)
+    this.memoryCleanupInterval = setInterval(() => {
+      this.limpiarMemoriaSuave();
+    }, 600000); // 10 minutos
 
     console.log("ngOnInit(): " + this.ChangedFormat);
   }
@@ -311,7 +340,7 @@ export class EnergiaComponent implements OnDestroy {
               this.datameasTodosNodosFiltrados = [...this.datameasTodosNodos]; // Copia inicial
               console.log('✅ Datos multi-línea cargados:', this.datameasTodosNodos.length, 'series');
               console.log('📊 Estructura final:', JSON.stringify(this.datameasTodosNodos, null, 2));
-              this.cdr.markForCheck();
+              this.safeMarkForCheck();
             }
           },
           error: (error) => {
@@ -324,7 +353,7 @@ export class EnergiaComponent implements OnDestroy {
               this.datameasTodosNodos = this.transformarAMultiLinea(datosPorNodo);
               this.datameasTodosNodosFiltrados = [...this.datameasTodosNodos]; // Copia inicial
               console.log('⚠️ Datos multi-línea cargados con errores');
-              this.cdr.markForCheck();
+              this.safeMarkForCheck();
             }
           }
         });
@@ -359,8 +388,8 @@ export class EnergiaComponent implements OnDestroy {
     console.log(`⚡ ${nodo} - Energía del día: ${diferencia.toFixed(3)} kWh (Primera: ${energiaPrimera}, Última: ${energiaUltima})`);
     console.log(`📦 Estado completo de energiaDiaData:`, JSON.stringify(this.energiaDiaData, null, 2));
     
-    // Forzar detección de cambios para actualizar la vista
-    this.cdr.markForCheck();
+    // Usar throttled markForCheck
+    this.safeMarkForCheck();
   }
   
   // Transformar datos de múltiples nodos a formato multi-línea de ngx-charts
@@ -406,7 +435,7 @@ export class EnergiaComponent implements OnDestroy {
       });
       return nodoKey && this.nodosVisibles[nodoKey];
     });
-    this.cdr.markForCheck();
+    this.safeMarkForCheck();
   }
 
   // Método para cargar el último valor de power de todos los nodos
@@ -441,7 +470,7 @@ export class EnergiaComponent implements OnDestroy {
             if (completados === total) {
               this.isLoadingPower = false;
               console.log('✅ Carga de power completada para todos los nodos');
-              this.cdr.markForCheck();
+              this.safeMarkForCheck();
             }
           },
           error: (error) => {
@@ -453,7 +482,7 @@ export class EnergiaComponent implements OnDestroy {
             if (completados === total) {
               this.isLoadingPower = false;
               console.log('⚠️ Carga de power completada con errores');
-              this.cdr.markForCheck();
+              this.safeMarkForCheck();
             }
           }
         });
@@ -592,7 +621,7 @@ export class EnergiaComponent implements OnDestroy {
         // El cálculo se hará en llenarDataConsultaMeasMes tomando el valor del día actual
         
         console.log("llenarDataConsultaMeas - Datos cargados para nodo:", nodo, "(limitado a", limitedData.length, "puntos)");
-        this.cdr.markForCheck();
+        this.safeMarkForCheck();
       })
   }
   llenarDataConsultaMeasMes(nodo: string, sfecha: string){
@@ -624,7 +653,7 @@ export class EnergiaComponent implements OnDestroy {
       }
       
       console.log("llenarDataConsultaMeasMes - Total energía mes:", this.totalEnergiaMes, "Costo mes:", this.costoMes);
-      this.cdr.markForCheck();
+      this.safeMarkForCheck();
     })
   }
   // Método para formatear números con separador de miles y 2 decimales con coma
@@ -652,16 +681,135 @@ export class EnergiaComponent implements OnDestroy {
         // Limitar datos para evitar sobrecarga
         const limitedData = dataArray.slice(-this.MAX_DATA_POINTS);
         this.datamultiMeas = this.validateChartData(limitedData);
-        this.cdr.markForCheck();
+        this.safeMarkForCheck();
       })
     //console.log("llenarDataMeasMulti: " + this.datamultiMeas);
   }
 
+  // Método para configurar detección de visibilidad de pestaña
+  private setupPageVisibilityDetection(): void {
+    this.visibilityChangeHandler = () => {
+      this.isPageVisible = !document.hidden;
+      
+      if (this.isPageVisible) {
+        console.log('👁️ Pestaña visible - reanudando');
+        this.refrescarPowerNodos();
+      } else {
+        console.log('😴 Pestaña oculta - pausando');
+        this.wsNotificationQueue.clear();
+        if (this.wsProcessingTimer) {
+          clearTimeout(this.wsProcessingTimer);
+          this.wsProcessingTimer = null;
+        }
+      }
+    };
+    
+    document.addEventListener('visibilitychange', this.visibilityChangeHandler);
+  }
+  
+  // Procesar notificaciones WebSocket con debounce (2 segundos)
+  private queueWebSocketNotification(nodo: string, notification: any): void {
+    if (!this.isPageVisible) return;
+    
+    this.wsNotificationQueue.set(nodo, notification);
+    
+    if (this.wsProcessingTimer) {
+      clearTimeout(this.wsProcessingTimer);
+    }
+    
+    this.wsProcessingTimer = setTimeout(() => {
+      this.processWebSocketQueue();
+    }, this.WS_DEBOUNCE_TIME);
+  }
+  
+  private processWebSocketQueue(): void {
+    if (this.wsNotificationQueue.size === 0) return;
+    
+    this.wsNotificationQueue.forEach((notification, nodo) => {
+      if (this.nodos.includes(nodo)) {
+        this.handleWebSocketNotification(nodo, notification);
+      }
+    });
+    
+    this.wsNotificationQueue.clear();
+    this.wsProcessingTimer = null;
+  }
+  
+  // Limpieza suave de memoria (sin afectar datos de gráficos)
+  private limpiarMemoriaSuave(): void {
+    console.log('🧹 Limpieza suave de memoria...');
+    
+    // NO limitar datameasTodosNodos ni datameasTodosNodosFiltrados
+    // Solo limpiar si hay crecimiento anormal
+    if (this.datameas && this.datameas.length > 200) {
+      this.datameas = this.datameas.slice(-150);
+    }
+    
+    if ((window as any).gc) {
+      (window as any).gc();
+    }
+    
+    this.safeMarkForCheck();
+  }
+  
+  // ChangeDetection con throttle
+  private safeMarkForCheck(): void {
+    const now = Date.now();
+    const timeSinceLastCheck = now - this.lastChangeDetection;
+    
+    if (timeSinceLastCheck >= this.MIN_CHANGE_DETECTION_INTERVAL) {
+      this.lastChangeDetection = now;
+      this.cdr.markForCheck();
+    } else {
+      if (this.changeDetectionTimeout) {
+        clearTimeout(this.changeDetectionTimeout);
+      }
+      
+      this.changeDetectionTimeout = setTimeout(() => {
+        this.lastChangeDetection = Date.now();
+        this.cdr.markForCheck();
+        this.changeDetectionTimeout = null;
+      }, this.MIN_CHANGE_DETECTION_INTERVAL - timeSinceLastCheck);
+    }
+  }
+
   // Método del ciclo de vida para limpiar subscripciones
   ngOnDestroy(): void {
+    console.log('🧹 Limpiando componente...');
+    
+    if (this.visibilityChangeHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
+      this.visibilityChangeHandler = null;
+    }
+    
     this.disconnectWebSocket();
+    
+    if (this.memoryCleanupInterval) {
+      clearInterval(this.memoryCleanupInterval);
+      this.memoryCleanupInterval = null;
+    }
+    
+    if (this.changeDetectionTimeout) {
+      clearTimeout(this.changeDetectionTimeout);
+      this.changeDetectionTimeout = null;
+    }
+    
+    if (this.wsReconnectTimer) {
+      clearTimeout(this.wsReconnectTimer);
+      this.wsReconnectTimer = null;
+    }
+    
+    if (this.wsProcessingTimer) {
+      clearTimeout(this.wsProcessingTimer);
+      this.wsProcessingTimer = null;
+    }
+    
+    this.wsNotificationQueue.clear();
+    
     this.destroy$.next();
     this.destroy$.complete();
+    
+    console.log('✅ Limpieza completada');
   }
 
   // TrackBy function para optimizar el ngFor de los nodos
@@ -727,59 +875,70 @@ export class EnergiaComponent implements OnDestroy {
   iraventas(){
     this.router.navigate(['/home']);
   }
+  
+  iraconciliacion(){
+    this.router.navigate(['/conciliacion']);
+  }
 
   // ==================== WEBSOCKET ====================
   
   initWebSocket(): void {
+    if (this.wsReconnectAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
+      console.warn('⚠️ Límite de reconexiones alcanzado');
+      this.wsError = true;
+      this.wsConnected = false;
+      this.safeMarkForCheck();
+      return;
+    }
+    
     try {
-      // Determinar la URL del WebSocket según el entorno
+      this.wsReconnectAttempts++;
+      console.log(`🔌 Conectando WebSocket (${this.wsReconnectAttempts}/${this.MAX_RECONNECT_ATTEMPTS})`);
+      
       let wsUrl: string;
       if (environment.production) {
-        // En producción, usar la misma dirección del host actual
         const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
         const host = window.location.hostname;
-        const port = '8002'; // Puerto del ms-concentrador-energia
+        const port = '8002';
         wsUrl = `${protocol}//${host}:${port}/ws-energia`;
       } else {
-        // En desarrollo
         wsUrl = 'http://localhost:8002/ws-energia';
       }
       
-      console.log('🔌 Conectando WebSocket a:', wsUrl);
-      
       this.stompClient = new Client({
         webSocketFactory: () => new SockJS(wsUrl),
-        debug: (str) => {
-          if (!environment.production) {
-            console.log('STOMP Debug:', str);
-          }
-        },
-        reconnectDelay: 5000,
-        heartbeatIncoming: 4000,
-        heartbeatOutgoing: 4000,
+        debug: (str) => {}, // Desactivado para reducir logs
+        reconnectDelay: 10000,
+        heartbeatIncoming: 10000,
+        heartbeatOutgoing: 10000,
         onConnect: () => {
           console.log('✅ WebSocket conectado');
           this.wsConnected = true;
           this.wsError = false;
-          this.cdr.markForCheck();
+          this.wsReconnectAttempts = 0;
+          this.safeMarkForCheck();
           this.subscribeToNodes();
         },
         onDisconnect: () => {
           console.log('⚠️ WebSocket desconectado');
           this.wsConnected = false;
-          this.cdr.markForCheck();
+          this.safeMarkForCheck();
         },
         onStompError: (frame) => {
-          console.error('❌ Error STOMP:', frame);
+          console.error('❌ Error STOMP');
           this.wsError = true;
           this.wsConnected = false;
-          this.cdr.markForCheck();
+          this.safeMarkForCheck();
+          
+          if (this.wsReconnectAttempts < this.MAX_RECONNECT_ATTEMPTS) {
+            this.wsReconnectTimer = setTimeout(() => this.initWebSocket(), 15000);
+          }
         },
         onWebSocketError: (event) => {
-          console.error('❌ Error WebSocket:', event);
+          console.error('❌ Error WebSocket');
           this.wsError = true;
           this.wsConnected = false;
-          this.cdr.markForCheck();
+          this.safeMarkForCheck();
         }
       });
       
@@ -788,7 +947,11 @@ export class EnergiaComponent implements OnDestroy {
     } catch (error) {
       console.error('❌ Error al inicializar WebSocket:', error);
       this.wsError = true;
-      this.cdr.markForCheck();
+      this.safeMarkForCheck();
+      
+      if (this.wsReconnectAttempts < this.MAX_RECONNECT_ATTEMPTS) {
+        this.wsReconnectTimer = setTimeout(() => this.initWebSocket(), 15000);
+      }
     }
   }
   
@@ -798,68 +961,70 @@ export class EnergiaComponent implements OnDestroy {
       return;
     }
     
-    // Suscribirse a cada nodo de energía
+    // Desuscribir anteriores
+    this.wsSubscriptions.forEach(sub => {
+      try { sub.unsubscribe(); } catch (e) {}
+    });
+    this.wsSubscriptions = [];
+    
+    // Suscribirse a cada nodo con debounce
     this.nodos.forEach(nodo => {
       const topic = `/topic/estadistica/${nodo}`;
-      this.stompClient!.subscribe(topic, (message) => {
+      const subscription = this.stompClient!.subscribe(topic, (message) => {
         try {
           const notification = JSON.parse(message.body);
-          console.log(`📊 Notificación recibida para ${nodo}:`, notification);
-          this.handleWebSocketNotification(nodo, notification);
+          this.queueWebSocketNotification(nodo, notification);
         } catch (error) {
-          console.error('❌ Error al procesar notificación:', error);
+          console.error('❌ Error en notificación:', error);
         }
       });
-      console.log(`✅ Suscrito a: ${topic}`);
+      this.wsSubscriptions.push(subscription);
+      console.log(`✅ Suscrito: ${topic}`);
     });
     
-    // Suscribirse a los nodos de temperatura
+    // Suscribirse a temperatura (sin debounce, menos frecuente)
     this.thermometers.forEach(thermometer => {
       const topic = `/topic/temperatura/${thermometer.nombrenodo}`;
-      this.stompClient!.subscribe(topic, (message) => {
+      const subscription = this.stompClient!.subscribe(topic, (message) => {
         try {
           const notification = JSON.parse(message.body);
-          console.log(`🌡️ Notificación de temperatura recibida para ${thermometer.nombrenodo}:`, notification);
           this.handleTemperatureWebSocketNotification(thermometer, notification);
         } catch (error) {
-          console.error('❌ Error al procesar notificación de temperatura:', error);
+          console.error('❌ Error temperatura:', error);
         }
       });
-      console.log(`✅ Suscrito a temperatura: ${topic}`);
+      this.wsSubscriptions.push(subscription);
+      console.log(`✅ Suscrito temp: ${topic}`);
     });
     
-    // También suscribirse al topic global
-    this.stompClient.subscribe('/topic/estadistica/all', (message) => {
-      try {
-        const notification = JSON.parse(message.body);
-        console.log('📊 Notificación global:', notification);
-      } catch (error) {
-        console.error('❌ Error al procesar notificación global:', error);
-      }
-    });
-    console.log('✅ Suscrito a: /topic/estadistica/all');
+    console.log(`📊 Total subscripciones: ${this.wsSubscriptions.length}`);
   }
   
   handleWebSocketNotification(nodo: string, notification: any): void {
-    // Actualizar los datos de power del nodo que recibió la notificación
     if (notification.data) {
       const data = notification.data;
       
-      // Actualizar power
       if (data.power !== undefined && data.power !== null) {
-        this.powerData[nodo] = parseFloat(data.power) || 0;
+        const newPower = parseFloat(data.power) || 0;
+        const oldPower = this.powerData[nodo] || 0;
+        
+        // Solo actualizar si cambia más de 5W
+        if (Math.abs(newPower - oldPower) > 5 || oldPower === 0) {
+          this.powerData[nodo] = newPower;
+          
+          if (data.fechameas) {
+            const fecha = new Date(data.fechameas);
+            this.fechameasData[nodo] = this.pipe.transform(fecha, 'HH:mm:ss') || 'N/A';
+          }
+          
+          this.safeMarkForCheck();
+          
+          // Log solo en cambios grandes
+          if (Math.abs(newPower - oldPower) > 50) {
+            console.log(`⚡ ${nodo}: ${newPower}W`);
+          }
+        }
       }
-      
-      // Actualizar timestamp
-      if (data.fechameas) {
-        const fecha = new Date(data.fechameas);
-        this.fechameasData[nodo] = this.pipe.transform(fecha, 'HH:mm:ss') || 'N/A';
-      }
-      
-      // Marcar para detección de cambios
-      this.cdr.markForCheck();
-      
-      console.log(`✅ Actualizado ${nodo}: ${this.powerData[nodo]}W a las ${this.fechameasData[nodo]}`);
     }
   }
   
@@ -872,32 +1037,47 @@ export class EnergiaComponent implements OnDestroy {
     if (notification.data) {
       const data = notification.data;
       
-      // Actualizar temperatura
       if (data.temperatura !== undefined && data.temperatura !== null) {
-        thermometer.valor = parseFloat(data.temperatura);
-        thermometer.error = false;
+        const newTemp = parseFloat(data.temperatura);
+        const oldTemp = thermometer.valor || 0;
+        
+        // Solo actualizar si cambia más de 0.5°C
+        if (Math.abs(newTemp - oldTemp) > 0.5 || oldTemp === 0) {
+          thermometer.valor = newTemp;
+          thermometer.error = false;
+          
+          if (data.fechahora) {
+            const fecha = new Date(data.fechahora);
+            thermometer.ultimaActualizacion = this.pipe.transform(fecha, 'HH:mm:ss') || 'N/A';
+          }
+          
+          this.safeMarkForCheck();
+          
+          // Log solo en cambios grandes
+          if (Math.abs(newTemp - oldTemp) > 2) {
+            console.log(`🌡️ ${thermometer.nombrenodo}: ${newTemp}°C`);
+          }
+        }
       }
-      
-      // Actualizar timestamp
-      if (data.fechahora) {
-        const fecha = new Date(data.fechahora);
-        thermometer.ultimaActualizacion = this.pipe.transform(fecha, 'HH:mm:ss') || 'N/A';
-      }
-      
-      // Marcar para detección de cambios
-      this.cdr.markForCheck();
-      
-      console.log(`✅ Temperatura actualizada ${thermometer.nombrenodo}: ${thermometer.valor}°C a las ${thermometer.ultimaActualizacion}`);
     }
   }
   
   disconnectWebSocket(): void {
     if (this.stompClient) {
-      this.stompClient.deactivate();
+      this.wsSubscriptions.forEach(sub => {
+        try { sub.unsubscribe(); } catch (e) {}
+      });
+      this.wsSubscriptions = [];
+      
+      try {
+        this.stompClient.deactivate();
+      } catch (error) {
+        console.error('Error al desactivar WebSocket:', error);
+      }
       this.stompClient = null;
       this.wsConnected = false;
-      console.log('🔌 WebSocket desconectado manualmente');
-      this.cdr.markForCheck();
+      console.log('🔌 WebSocket desconectado');
+      this.safeMarkForCheck();
     }
   }
 
@@ -950,14 +1130,14 @@ export class EnergiaComponent implements OnDestroy {
             console.warn(`⚠️ No hay datos para ${thermometer.nombre} (${thermometer.nombrenodo})`);
           }
           
-          this.cdr.markForCheck();
+          this.safeMarkForCheck();
         },
         error: (error) => {
           console.error(`❌ Error cargando ${thermometer.nombre}:`, error);
           thermometer.valor = null;
           thermometer.error = true;
           thermometer.ultimaActualizacion = 'Error';
-          this.cdr.markForCheck();
+          this.safeMarkForCheck();
         }
       });
   }

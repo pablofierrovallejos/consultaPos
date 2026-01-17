@@ -81,6 +81,8 @@ export class HomeComponent {
   totalMonto: number = 0;
   totalTarjeta: number = 0;
   totalVentasMes: number = 0; // Total de ventas del mes actual
+  totalEfectivoMes: number = 0; // Total efectivo del mes
+  totalTarjetaMes: number = 0; // Total tarjeta del mes
 
   // Producto seleccionado para gráfico diario
   productoSeleccionado: string = '';
@@ -570,6 +572,40 @@ export class HomeComponent {
       this.dataestadistica.forEach((item: any) => {
         const valor = Number(item.value) || 0;
         this.totalVentasMes += valor;
+      });
+    }
+    // Cargar ventas del mes completo para calcular totales por tipo de pago
+    this.cargarVentasMesCompleto();
+  }
+
+  // Método para cargar todas las ventas del mes y calcular totales por tipo de pago
+  cargarVentasMesCompleto(): void {
+    const primerDia = new Date(this.fecha.getFullYear(), this.fecha.getMonth(), 1);
+    const ultimoDia = new Date(this.fecha.getFullYear(), this.fecha.getMonth() + 1, 0);
+    
+    // Inicializar totales
+    this.totalEfectivoMes = 0;
+    this.totalTarjetaMes = 0;
+    
+    // Iterar por cada día del mes
+    for (let d = new Date(primerDia); d <= ultimoDia; d.setDate(d.getDate() + 1)) {
+      const fechaStr = d.getFullYear() + '-' + 
+                      (d.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                      d.getDate().toString().padStart(2, '0');
+      
+      this.api.getVentasDia(fechaStr).subscribe((ventas: any[]) => {
+        if (ventas && ventas.length > 0) {
+          ventas.forEach((venta: any) => {
+            const totalImporte = Number(venta.totalimporte) || 0;
+            const tipoPago = (venta.tipopago || '').toUpperCase();
+            
+            if (tipoPago === 'TARJETA') {
+              this.totalTarjetaMes += totalImporte;
+            } else if (tipoPago === 'EFECTIVO') {
+              this.totalEfectivoMes += totalImporte;
+            }
+          });
+        }
       });
     }
   }
@@ -1154,47 +1190,13 @@ export class HomeComponent {
           console.warn('⚠️ No se pudo obtener dirección exacta:', geoError);
         }
       } else {
-        console.log('⚠️ GPS no disponible (usuario rechazó o no soportado), usando fallback IP...');
+        console.log('⚠️ GPS no disponible (usuario rechazó o no soportado), usando datos por defecto');
       }
 
-      // 2. OBTENER INFORMACIÓN DE IP (siempre, para complementar o como fallback)
-      try {
-        const ipResponse = await fetch('https://ipapi.co/json/');
-        const ipData = await ipResponse.json();
-        
-        if (ipData && !ipData.error) {
-          geoData.query = ipData.ip;
-          geoData.isp = ipData.org || ipData.isp || 'Desconocido';
-          geoData.timezone = ipData.timezone || 'America/Santiago';
-          geoData.asn = ipData.asn;
-          
-          // Si NO se obtuvo GPS, usar datos de IP como principal
-          if (geoData.precision === 'low') {
-            geoData.lat = ipData.latitude;
-            geoData.lon = ipData.longitude;
-            geoData.city = ipData.city;
-            geoData.regionName = ipData.region;
-            geoData.country = ipData.country_name;
-            geoData.accuracy = 5000; // ~5km de precisión con IP
-            geoData.precision = 'ip-fallback';
-            console.log('📍 Usando geolocalización por IP (fallback):', ipData);
-          } else {
-            console.log('✅ Información de ISP/IP complementaria obtenida');
-          }
-        }
-      } catch (ipError) {
-        console.warn('⚠️ No se pudo obtener información de IP desde ipapi.co:', ipError);
-        
-        // Fallback final: solo obtener la IP
-        try {
-          const ipifyResponse = await fetch('https://api.ipify.org?format=json');
-          const ipifyData = await ipifyResponse.json();
-          geoData.query = ipifyData.ip;
-          console.log('✅ IP obtenida desde ipify (fallback final):', ipifyData.ip);
-        } catch (e) {
-          console.warn('⚠️ No se pudo obtener IP pública');
-        }
-      }
+      // Nota: ipapi.co removido para evitar errores CORS y límites de tasa (429)
+      // La aplicación usará GPS si está disponible, o datos por defecto de Santiago, Chile
+      console.log('ℹ️ Geolocalización por IP deshabilitada para evitar errores de CORS y límites de tasa');
+
 
       // 3. Agregar timestamp y metadata adicional
       geoData.timestamp = new Date().toISOString();

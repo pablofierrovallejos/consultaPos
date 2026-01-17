@@ -86,23 +86,8 @@ export class GastosComponent {
         geoData.accuracy = posicion.accuracy;
         geoData.precision = posicion.accuracy < 100 ? 'high' : 'medium';
       }
-      try {
-        const ipResponse = await fetch('https://ipapi.co/json/');
-        const ipData = await ipResponse.json();
-        if (ipData && !ipData.error) {
-          geoData.query = ipData.ip;
-          geoData.isp = ipData.org || 'Desconocido';
-          geoData.timezone = ipData.timezone || 'America/Santiago';
-          if (geoData.precision === 'low') {
-            geoData.lat = ipData.latitude;
-            geoData.lon = ipData.longitude;
-            geoData.city = ipData.city;
-            geoData.regionName = ipData.region;
-            geoData.country = ipData.country_name;
-            geoData.precision = 'ip-fallback';
-          }
-        }
-      } catch (e) { }
+      // Nota: ipapi.co removido para evitar errores CORS y límites de tasa
+      // Se usa solo GPS o datos por defecto
       geoData.timestamp = new Date().toISOString();
       geoData.userAgent = navigator.userAgent;
       geoData.platform = navigator.platform;
@@ -162,6 +147,10 @@ export class GastosComponent {
   }
   iragastos() {
     this.router.navigate(['/gastos']);
+  }
+  
+  iraconciliacion() {
+    this.router.navigate(['/conciliacion']);
   }
 
   mesAnterior(){

@@ -23,6 +23,22 @@
     </div>
   </div>
 
+  <!-- Resumen de totales superior -->
+  <div *ngIf="!error && abonosTransbank.length > 0" class="total-mensual total-superior">
+    <div class="total-item total-left">
+      <strong>Total Monto Venta del Mes:</strong>
+      <span class="monto-total">${{ formatearMonto(calcularTotalMontoVenta()) }}</span>
+    </div>
+    <div class="total-item total-center">
+      <strong>Total Abonos del Mes:</strong>
+      <span class="monto-total">${{ formatearMonto(calcularTotalMensual()) }}</span>
+    </div>
+    <div class="total-item total-right">
+      <strong>Total Cobro Transbank:</strong>
+      <span class="monto-total cobro-transbank">${{ formatearMonto(calcularTotalCobroTransbank()) }}</span>
+    </div>
+  </div>
+
   <!-- Mensaje de error -->
   <div *ngIf="error" class="error-message">
     <mat-icon>error</mat-icon>

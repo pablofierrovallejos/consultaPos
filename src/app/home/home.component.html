@@ -133,25 +133,35 @@
       <button  (click)="logout()" class="logout-btn"> Cerrar Sesión</button> &nbsp;&nbsp;&nbsp; v2.1.0
 </mat-toolbar>
 
-<!-- Hint de audio (se oculta después del primer clic) -->
-<div class="audio-hint" *ngIf="showAudioHint" (click)="showAudioHint = false">
-  <span class="audio-hint-icon">🔊</span>
-  <span class="audio-hint-text">Haz clic en cualquier parte para habilitar notificaciones con sonido</span>
-  <button class="audio-hint-close" (click)="showAudioHint = false; $event.stopPropagation()">✕</button>
-</div>
-
 <!-- Dashboard Container -->
 <div class="dashboard-container">
 
   <!-- CARD 1: Ventas Diarias Montos Totales -->
   <div class="dashboard-card">
     <div class="card-header">
-      <h2 class="card-title">📊 Ventas diarias Montos Totales {{nombreMesActual}} (${{formatearMonto(totalVentasMes)}})</h2>
+      <h2 class="card-title">📊 Ventas diarias Montos Totales {{nombreMesActual}}</h2>
       <div class="card-actions">
         <button class="btn-nav" (click)="mesAnterior()">← Mes Anterior</button>
         <button class="btn-nav" (click)="mesSiguiente()">Mes Siguiente →</button>
       </div>
     </div>
+    
+    <!-- Totales del mes -->
+    <div class="totales-mes-container">
+      <div class="total-mes-item">
+        <span class="total-mes-label">Total Efectivo:</span>
+        <span class="total-mes-valor efectivo">${{formatearMonto(totalEfectivoMes)}}</span>
+      </div>
+      <div class="total-mes-item">
+        <span class="total-mes-label">Total Tarjeta:</span>
+        <span class="total-mes-valor tarjeta">${{formatearMonto(totalTarjetaMes)}}</span>
+      </div>
+      <div class="total-mes-item total-general">
+        <span class="total-mes-label">TOTAL:</span>
+        <span class="total-mes-valor total">${{formatearMonto(totalVentasMes)}}</span>
+      </div>
+    </div>
+    
     <div class="card-body">
       <div class="chart-container">
         <ngx-charts-bar-vertical

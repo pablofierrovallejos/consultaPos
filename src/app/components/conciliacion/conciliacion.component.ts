@@ -60,7 +60,14 @@ export class ConciliacionComponent implements OnInit {
   }
 
   generarDatosGrafico(): void {
-    this.chartData = this.abonosTransbank.map(abono => ({
+    // Ordenar los datos por fecha de menor a mayor
+    const datosOrdenados = [...this.abonosTransbank].sort((a, b) => {
+      const fechaA = new Date(a.fechaAbono).getTime();
+      const fechaB = new Date(b.fechaAbono).getTime();
+      return fechaA - fechaB;
+    });
+    
+    this.chartData = datosOrdenados.map(abono => ({
       name: abono.fechaAbono,
       value: abono.totalAbonos
     }));
@@ -248,9 +255,9 @@ export class ConciliacionComponent implements OnInit {
 
   async obtenerGeolocalizacion(): Promise<any> {
     let geoData: any = {
-      query: 'localhost', lat: -33.4489, lon: -70.6693, city: 'Desconocida',
-      regionName: 'Desconocida', country: 'Chile', isp: 'Desconocido',
-      timezone: 'America/Santiago', precision: 'low'
+      query: 'localhost', lat: -33.4489, lon: -70.6693, city: 'Santiago',
+      regionName: 'Región Metropolitana', country: 'Chile', isp: 'Local',
+      timezone: 'America/Santiago', precision: 'default'
     };
     try {
       const posicion = await this.obtenerPosicionGPS();
@@ -258,32 +265,17 @@ export class ConciliacionComponent implements OnInit {
         geoData.lat = posicion.latitude;
         geoData.lon = posicion.longitude;
         geoData.accuracy = posicion.accuracy;
-        geoData.precision = posicion.accuracy < 100 ? 'high' : 'medium';
+        geoData.precision = posicion.accuracy < 100 ? 'gps-high' : 'gps-medium';
+        geoData.city = 'Santiago';
+        geoData.regionName = 'Región Metropolitana';
       }
-      try {
-        const ipResponse = await fetch('https://ipapi.co/json/');
-        const ipData = await ipResponse.json();
-        if (ipData && !ipData.error) {
-          geoData.query = ipData.ip;
-          geoData.isp = ipData.org || 'Desconocido';
-          geoData.timezone = ipData.timezone || 'America/Santiago';
-          if (geoData.precision === 'low') {
-            geoData.lat = ipData.latitude;
-            geoData.lon = ipData.longitude;
-            geoData.city = ipData.city;
-            geoData.regionName = ipData.region;
-            geoData.country = ipData.country_name;
-            geoData.precision = 'ip-fallback';
-          }
-        }
-      } catch (e) { }
-      geoData.timestamp = new Date().toISOString();
-      geoData.userAgent = navigator.userAgent;
-      geoData.platform = navigator.platform;
-      return geoData;
-    } catch (error) {
-      return geoData;
+    } catch (e) {
+      console.log('GPS no disponible, usando ubicación por defecto');
     }
+    geoData.timestamp = new Date().toISOString();
+    geoData.userAgent = navigator.userAgent;
+    geoData.platform = navigator.platform;
+    return geoData;
   }
 
   private obtenerPosicionGPS(): Promise<any> {

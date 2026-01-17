@@ -48,9 +48,9 @@ ng serve --port 4201	//ejecutar angular en un puerto determinado
 ng build --configuration=production
 
 ## Construir imagen Docker (incrementar versión)
-docker build -t servicio-ng-front-vtas:v25 .
-docker tag servicio-ng-front-vtas:v25 96552333aa/servicio-ng-front-vtas:v25
-docker push 96552333aa/servicio-ng-front-vtas:v25
+docker build -t 96552333aa/servicio-ng-front-vtas:v33 .
+docker tag servicio-ng-front-vtas:v16 96552333aa/servicio-ng-front-vtas:v16
+docker push 96552333aa/servicio-ng-front-vtas:v33
 
 ## Ejecutar localmente para pruebas
 docker run -d -p 8080:80 servicio-ng-front-vtas:v14
@@ -81,10 +81,9 @@ sudo docker run -d --name servicio-ng-front-vtas --network springcloud -p 8080:8
 # 1. Compilar para producción
 ng build --configuration=production
 
-# 2. Construir nueva imagen Docker (v14 - Fix del proxy de energía)
-docker build -t servicio-ng-front-vtas:v20 .
-docker tag servicio-ng-front-vtas:v20 96552333aa/servicio-ng-front-vtas:v20
-docker push 96552333aa/servicio-ng-front-vtas:v20
+# 2. Construir nueva imagen Docker (v34 - Totales mensuales + Conciliación)
+docker build -t 96552333aa/servicio-ng-front-vtas:v34 .
+docker push 96552333aa/servicio-ng-front-vtas:v34
 
 # 3. Asegurarse que los microservicios backend están corriendo Y en la red springcloud
 docker ps | grep -E "servicio-productos|ms-concentrador-energia"
@@ -93,8 +92,17 @@ docker network inspect springcloud | grep -E "servicio-productos|ms-concentrador
 # 4. Actualizar el frontend en producción
 docker stop servicio-ng-front-vtas
 docker rm servicio-ng-front-vtas
-docker pull 96552333aa/servicio-ng-front-vtas:v14
-sudo docker run -d --name servicio-ng-front-vtas --network springcloud -p 8080:80 --restart always 96552333aa/servicio-ng-front-vtas:v14
+docker pull 96552333aa/servicio-ng-front-vtas:v34
+sudo docker run -d --name servicio-ng-front-vtas --network springcloud -p 8080:80 --restart always 96552333aa/servicio-ng-front-vtas:v34
 
-# 5. Probar el endpoint de energía
+# 5. Verificar que el contenedor está corriendo con la nueva versión
+docker ps | grep servicio-ng-front-vtas
+docker logs servicio-ng-front-vtas
+
+# 6. Limpiar caché del navegador
+# - CTRL + SHIFT + R (forzar recarga)
+# - O abrir en modo incógnito
+# - O vaciar caché del navegador
+
+# 7. Probar el endpoint de energía
 curl "http://localhost:8080/api/energia/consultar-consumo-mes2/Meas1/2025-10-01"

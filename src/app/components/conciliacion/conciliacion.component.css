@@ -1,3 +1,38 @@
+/* Estilos para el toolbar */
+mat-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+mat-toolbar button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+mat-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+mat-toolbar button:active {
+  transform: translateY(0);
+}
+
+mat-toolbar span {
+  color: white;
+  font-weight: 500;
+}
+
 .container {
   max-width: 1400px;
   margin: 2rem auto;
@@ -155,6 +190,32 @@ h2 {
   border-top: 2px solid #3f51b5;
   font-size: 1.2rem;
   margin-top: 1rem;
+}
+
+/* Total mensual superior (antes de la tabla) */
+.total-superior {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  border-top: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  margin-bottom: 2rem;
+  margin-top: 0;
+}
+
+.total-superior strong {
+  color: white;
+}
+
+.total-superior .monto-total {
+  color: #fff176;
+  font-weight: bold;
+  font-size: 1.6rem;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.total-superior .monto-total.cobro-transbank {
+  color: #ffcdd2;
 }
 
 .total-item {

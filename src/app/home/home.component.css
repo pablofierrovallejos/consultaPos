@@ -649,6 +649,73 @@
   gap: 20px;
 }
 
+/* Totales del mes en card superior */
+.totales-mes-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: white;
+  padding: 20px;
+  margin: 0 0 20px 0;
+  border-radius: 8px;
+  gap: 15px;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.total-mes-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  min-width: 180px;
+  transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
+}
+
+.total-mes-item:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.total-mes-item.total-general {
+  background: #e3f2fd;
+  border: 2px solid #2196f3;
+}
+
+.total-mes-label {
+  font-size: 0.95rem;
+  color: #333;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.total-mes-valor {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #212529;
+  text-align: center;
+}
+
+.total-mes-valor.efectivo {
+  color: #2e7d32;
+}
+
+.total-mes-valor.tarjeta {
+  color: #1565c0;
+}
+
+.total-mes-valor.total {
+  color: #0d47a1;
+  font-size: 2.2rem;
+}
+
 .total-item {
   display: flex;
   flex-direction: column;
