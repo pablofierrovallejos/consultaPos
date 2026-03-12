@@ -38,6 +38,12 @@
       "^/api/energia": ""
     }
   },
+  "/gastos": {
+    "target": "http://localhost:81",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
   "/api/*": {
     "target": "http://localhost:8001",
     "secure": false,

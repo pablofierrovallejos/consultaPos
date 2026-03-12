@@ -28,8 +28,8 @@
       <button class="refresh-button" (click)="refrescarPowerNodos()">🔄 Actualizar</button>
     </div>
     <div class="gauges-grid">
-      <!-- Medidores de Power -->
-      <div class="gauge-card" *ngFor="let nodo of nodos; trackBy: trackByNodo">
+      <!-- Medidores de Power con HTML/CSS simple -->
+      <div class="gauge-card-simple" *ngFor="let nodo of nodos; trackBy: trackByNodo">
         <div class="nodo-info-card">
           <div class="nodo-code">{{nodo}}</div>
           <div class="nodo-descripcion">
@@ -39,24 +39,23 @@
             <span class="icono-consumo" *ngIf="nodo === 'T163' || nodo === 'T77' || nodo === 'T26'">🔌</span>
           </div>
         </div>
-        <div class="gauge-wrapper">
-          <ngx-charts-gauge
-            [view]="[130, 100]"
-            [scheme]="getGaugeColorScheme(nodo)"
-            [results]="[{ name: nodo, value: powerData[nodo] || 0 }]"
-            [min]="0"
-            [max]="maxPower"
-            [angleSpan]="240"
-            [startAngle]="-120"
-            [units]="'W'"
-            [bigSegments]="10"
-            [smallSegments]="5"
-            [showAxis]="true"
-            [margin]="[3, 10, 3, 10]">
-          </ngx-charts-gauge>
+        <div class="gauge-wrapper-simple">
+          <div class="power-display" 
+               [style.background-image]="'url(assets/reloj.png)'"
+               [style.background-size]="'contain'"
+               [style.background-position]="'center'"
+               [style.background-repeat]="'no-repeat'"
+               [style.background-color]="getGaugeColorSimple(nodo)">
+            <div class="power-value">{{powerData[nodo] || 0}}</div>
+            <div class="power-unit">W</div>
+          </div>
           <div class="gauge-timestamp">{{fechameasData[nodo] || 'N/A'}}</div>
         </div>
-        <div class="nodo-energia-card">
+        <div class="nodo-energia-card" [class.sensor-offline]="isSensorOffline(nodo)" [class.sensor-online]="!isSensorOffline(nodo)">
+          <div class="status-badge">
+            <span *ngIf="!isSensorOffline(nodo)">ONLINE</span>
+            <span *ngIf="isSensorOffline(nodo)">OFFLINE</span>
+          </div>
           <div class="energia-label">Tot. Energía hoy:</div>
           <div class="energia-valor">
             <ng-container *ngIf="energiaDiaData[nodo] !== undefined && energiaDiaData[nodo] !== null; else noData">
@@ -67,20 +66,21 @@
         </div>
       </div>
 
-      <!-- Termómetros (después de T72) -->
-      <div class="thermometer-card" *ngFor="let thermometer of thermometers; trackBy: trackByThermometer">
+      <!-- Termómetros simples -->
+      <div class="gauge-card-simple" *ngFor="let thermometer of thermometers; trackBy: trackByThermometer">
         <div class="nodo-info-card">
           <div class="nodo-code">🌡️</div>
           <div class="nodo-descripcion">{{thermometer.nombre}}</div>
         </div>
-        <div class="thermometer-wrapper">
-          <div class="temperature-display" [ngClass]="getTemperatureClass(thermometer.valor)">
-            <span class="temperature-value" *ngIf="!thermometer.error && thermometer.valor !== null">
-              {{thermometer.valor | number:'1.1-1'}}°C
-            </span>
-            <span class="temperature-error" *ngIf="thermometer.error || thermometer.valor === null">
-              Error
-            </span>
+        <div class="gauge-wrapper-simple">
+          <div class="temperature-display-simple" [ngClass]="getTemperatureClass(thermometer.valor)">
+            <div class="temp-value" *ngIf="!thermometer.error && thermometer.valor !== null">
+              {{thermometer.valor | number:'1.1-1'}}
+            </div>
+            <div class="temp-value" *ngIf="thermometer.error || thermometer.valor === null">
+              --
+            </div>
+            <div class="temp-unit">°C</div>
           </div>
           <div class="gauge-timestamp">{{thermometer.ultimaActualizacion}}</div>
         </div>
@@ -121,7 +121,8 @@
             [xAxisLabel]="xAxisLabelMeas"
             [yAxisLabel]="yAxisLabelMeas"
             [autoScale]="true"
-            [animations]="false">
+            [animations]="false"
+            [curve]="curve">
           </ngx-charts-line-chart>
         </div>
       </div>

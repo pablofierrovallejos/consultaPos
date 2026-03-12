@@ -119,7 +119,7 @@ export class GastosComponent {
     const month = String(currentDate.getMonth() + 1).padStart(2, '0');
     const monthParam = `${year}-${month}`;
 
-    const url = `http://35.209.63.29:81/gastos?month=${monthParam}`;
+    const url = `/gastos?month=${monthParam}`;
     this.gastosUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
 
     console.log('URL de gastos actualizada:', url);

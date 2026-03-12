@@ -8,6 +8,7 @@ import { takeUntil } from 'rxjs/operators';
 import { Client } from '@stomp/stompjs';
 import * as SockJS from 'sockjs-client';
 import { environment } from '../../../environments/environment';
+import * as shape from 'd3-shape';
 
 // Interfaces para termómetros
 interface TemperatureSensor {
@@ -49,7 +50,10 @@ interface ThermometerConfig {
 export class EnergiaComponent implements OnDestroy {
   private destroy$ = new Subject<void>();
   private isLoadingPower = false; // Bandera para evitar llamadas simultáneas
-  private readonly MAX_DATA_POINTS = 100; // Límite para gráficos individuales (no afecta día completo)
+  private readonly MAX_DATA_POINTS = 60; // 60 puntos = buena resolución sin sobrecargar
+  
+  // Configuración de interpolación suave para gráficos
+  curve: any = shape.curveMonotoneX; // Interpolación suave
   
   // WebSocket
   private stompClient: Client | null = null;
@@ -175,13 +179,13 @@ export class EnergiaComponent implements OnDestroy {
     // Cargar datos de termómetros
     this.cargarTermometros();
     
-    // Inicializar WebSocket después de cargar datos iniciales
+    // Inicializar WebSocket después de 2 segundos
     setTimeout(() => this.initWebSocket(), 2000);
     
-    // Limpieza periódica muy suave (cada 10 minutos, no cada 5)
-    this.memoryCleanupInterval = setInterval(() => {
-      this.limpiarMemoriaSuave();
-    }, 600000); // 10 minutos
+    // LIMPIEZA DESHABILITADA - Estaba recargando datos constantemente
+    // this.memoryCleanupInterval = setInterval(() => {
+    //   this.limpiarMemoriaAgresiva();
+    // }, 120000);
 
     console.log("ngOnInit(): " + this.ChangedFormat);
   }
@@ -295,30 +299,23 @@ export class EnergiaComponent implements OnDestroy {
 
   // Método para cargar datos del día de TODOS los nodos (gráfico multi-línea)
   cargarDatosTodosNodosDia(): void {
-    console.log('🔄 Cargando datos del día para todos los nodos...');
-    console.log('📅 Fecha formato:', this.ChangedFormat);
-    console.log('🔗 Endpoint base:', '/energia/consultar-measures/{nodo}/{fecha}');
+    // Solo log esencial
+    console.log('🔄 Cargando datos del día...');
     
     let completados = 0;
     const total = this.nodos.length;
     const datosPorNodo: { [key: string]: any[] } = {};
     
     this.nodos.forEach(nodo => {
-      console.log(`🔄 Cargando ${nodo} con fecha ${this.ChangedFormat}...`);
-      
       // Usar getDataConsultaMeasHora para obtener múltiples mediciones por hora
       this.ApiService.getDataConsultaMeasHora(nodo, this.ChangedFormat)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (datameas: any) => {
-            console.log(`📦 Datos recibidos para ${nodo}:`, datameas);
-            console.log(`📊 Tipo de datos:`, Array.isArray(datameas) ? 'Array' : typeof datameas);
-            console.log(`📏 Cantidad de registros:`, Array.isArray(datameas) ? datameas.length : 1);
-            
             const dataArray = Array.isArray(datameas) ? datameas : [datameas];
-            // No limitar datos para mostrar el día completo
             
             // Transformar datos del backend (power, fechameas) al formato ngx-charts (name, value)
+            // SIN muestreo - mostrar todos los datos del día completo
             const transformedData = dataArray.map(item => ({
               name: this.extraerHoraDeRegistro(item.fechameas),
               value: parseFloat(item.power) || 0
@@ -329,30 +326,23 @@ export class EnergiaComponent implements OnDestroy {
             // Calcular diferencia de energía del día (última - primera medición)
             this.calcularEnergiaDia(nodo, dataArray);
             
-            console.log(`✅ Datos procesados para ${nodo}:`, datosPorNodo[nodo].length, 'puntos');
-            console.log(`📊 Muestra de datos transformados:`, datosPorNodo[nodo].slice(0, 3));
-            console.log(`⚡ Energía calculada para ${nodo}:`, this.energiaDiaData[nodo]);
-            
             completados++;
             if (completados === total) {
               // Todos los nodos cargados, transformar a formato multi-línea
               this.datameasTodosNodos = this.transformarAMultiLinea(datosPorNodo);
-              this.datameasTodosNodosFiltrados = [...this.datameasTodosNodos]; // Copia inicial
-              console.log('✅ Datos multi-línea cargados:', this.datameasTodosNodos.length, 'series');
-              console.log('📊 Estructura final:', JSON.stringify(this.datameasTodosNodos, null, 2));
+              this.datameasTodosNodosFiltrados = [...this.datameasTodosNodos];
+              console.log('✅ Cargado:', this.datameasTodosNodos.length, 'series con datos completos');
               this.safeMarkForCheck();
             }
           },
           error: (error) => {
-            console.error(`❌ Error cargando datos de ${nodo}:`, error);
-            console.error(`❌ URL intentada: /energia/consultar-measures/${nodo}/${this.ChangedFormat}`);
+            console.error(`❌ Error ${nodo}:`, error);
             datosPorNodo[nodo] = [];
             
             completados++;
             if (completados === total) {
               this.datameasTodosNodos = this.transformarAMultiLinea(datosPorNodo);
-              this.datameasTodosNodosFiltrados = [...this.datameasTodosNodos]; // Copia inicial
-              console.log('⚠️ Datos multi-línea cargados con errores');
+              this.datameasTodosNodosFiltrados = [...this.datameasTodosNodos];
               this.safeMarkForCheck();
             }
           }
@@ -362,20 +352,14 @@ export class EnergiaComponent implements OnDestroy {
   
   // Calcular diferencia de energía del día (última medición - primera medición)
   private calcularEnergiaDia(nodo: string, dataArray: any[]): void {
-    console.log(`🔍 Calculando energía para ${nodo}, datos recibidos:`, dataArray?.length || 0, 'registros');
-    
     if (!dataArray || dataArray.length === 0) {
       this.energiaDiaData[nodo] = 0;
-      console.log(`⚠️ ${nodo}: Sin datos para calcular energía del día`);
       return;
     }
     
     // Obtener primer y último registro del día
     const primerRegistro = dataArray[0];
     const ultimoRegistro = dataArray[dataArray.length - 1];
-    
-    console.log(`📊 ${nodo} - Primer registro:`, primerRegistro);
-    console.log(`📊 ${nodo} - Último registro:`, ultimoRegistro);
     
     const energiaPrimera = parseFloat(primerRegistro?.energy) || 0;
     const energiaUltima = parseFloat(ultimoRegistro?.energy) || 0;
@@ -384,9 +368,6 @@ export class EnergiaComponent implements OnDestroy {
     const diferencia = energiaUltima - energiaPrimera;
     
     this.energiaDiaData[nodo] = diferencia;
-    
-    console.log(`⚡ ${nodo} - Energía del día: ${diferencia.toFixed(3)} kWh (Primera: ${energiaPrimera}, Última: ${energiaUltima})`);
-    console.log(`📦 Estado completo de energiaDiaData:`, JSON.stringify(this.energiaDiaData, null, 2));
     
     // Usar throttled markForCheck
     this.safeMarkForCheck();
@@ -442,12 +423,10 @@ export class EnergiaComponent implements OnDestroy {
   cargarPowerTodosNodos(): void {
     // Evitar llamadas simultáneas
     if (this.isLoadingPower) {
-      console.log('⏸️ Ya hay una carga de power en progreso, saltando...');
       return;
     }
     
     this.isLoadingPower = true;
-    console.log('🔄 Cargando power de todos los nodos...');
     
     let completados = 0;
     const total = this.nodos.length;
@@ -458,30 +437,23 @@ export class EnergiaComponent implements OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (datameas: any) => {
-            console.log(`📊 Respuesta getPowerNodo para ${nodo}:`, datameas);
-            
-            // datameas ya es el último registro
             this.powerData[nodo] = this.extraerPowerDeRegistro(datameas);
             this.fechameasData[nodo] = this.extraerFechameasDeRegistro(datameas);
-            
-            console.log(`✅ ${nodo}: ${this.powerData[nodo]}W, ${this.fechameasData[nodo]}`);
             
             completados++;
             if (completados === total) {
               this.isLoadingPower = false;
-              console.log('✅ Carga de power completada para todos los nodos');
               this.safeMarkForCheck();
             }
           },
           error: (error) => {
-            console.error(`❌ Error cargando power de ${nodo}:`, error);
+            console.error(`❌ Error ${nodo}:`, error);
             this.powerData[nodo] = 0;
             this.fechameasData[nodo] = 'Error';
             
             completados++;
             if (completados === total) {
               this.isLoadingPower = false;
-              console.log('⚠️ Carga de power completada con errores');
               this.safeMarkForCheck();
             }
           }
@@ -535,6 +507,28 @@ export class EnergiaComponent implements OnDestroy {
   // Método para refrescar los valores de power (llamar cada X segundos)
   refrescarPowerNodos(): void {
     this.cargarPowerTodosNodos();
+  }
+
+  // Helper para detectar si un sensor está offline (>10 min sin actualizar)
+  isSensorOffline(nodo: string): boolean {
+    const timestamp = this.fechameasData[nodo];
+    if (!timestamp || timestamp === 'N/A' || timestamp === 'Error') {
+      return true; // Sin datos = offline
+    }
+    
+    // Extraer hora del timestamp (formato HH:mm:ss)
+    const [horas, minutos, segundos] = timestamp.split(':').map(Number);
+    
+    // Crear fecha de la última medición (asumiendo que es del día actual)
+    const now = new Date();
+    const ultimaMedicion = new Date();
+    ultimaMedicion.setHours(horas, minutos, segundos, 0);
+    
+    // Calcular diferencia en minutos
+    const diferenciaMs = now.getTime() - ultimaMedicion.getTime();
+    const diferenciaMinutos = diferenciaMs / (1000 * 60);
+    
+    return diferenciaMinutos > 10;
   }
 
   // Helper method para validar y limpiar datos de gráficos
@@ -693,13 +687,23 @@ export class EnergiaComponent implements OnDestroy {
       
       if (this.isPageVisible) {
         console.log('👁️ Pestaña visible - reanudando');
-        this.refrescarPowerNodos();
+        // Reconectar WebSocket si está desconectado
+        if (!this.wsConnected && this.wsReconnectAttempts < this.MAX_RECONNECT_ATTEMPTS) {
+          console.log('🔌 Reconectando WebSocket...');
+          this.initWebSocket();
+        }
       } else {
-        console.log('😴 Pestaña oculta - pausando');
+        console.log('😴 Pestaña oculta - pausando y desconectando');
+        // Limpiar cola y timers
         this.wsNotificationQueue.clear();
         if (this.wsProcessingTimer) {
           clearTimeout(this.wsProcessingTimer);
           this.wsProcessingTimer = null;
+        }
+        // Desconectar WebSocket para liberar recursos
+        if (this.wsConnected) {
+          console.log('🔌 Desconectando WebSocket por pestaña oculta');
+          this.disconnectWebSocket();
         }
       }
     };
@@ -735,21 +739,92 @@ export class EnergiaComponent implements OnDestroy {
     this.wsProcessingTimer = null;
   }
   
-  // Limpieza suave de memoria (sin afectar datos de gráficos)
-  private limpiarMemoriaSuave(): void {
-    console.log('🧹 Limpieza suave de memoria...');
+  // Limpieza AGRESIVA de memoria - Liberar completamente referencias
+  private limpiarMemoriaAgresiva(): void {
+    console.log('🗑️ Limpieza agresiva de memoria...');
     
-    // NO limitar datameasTodosNodos ni datameasTodosNodosFiltrados
-    // Solo limpiar si hay crecimiento anormal
-    if (this.datameas && this.datameas.length > 200) {
-      this.datameas = this.datameas.slice(-150);
-    }
+    // Nullear y recrear arrays para liberar referencias
+    this.datameas = [];
+    this.datameasTodosNodos = [];
+    this.datameasTodosNodosFiltrados = [];
+    this.datameasMes = [];
+    this.datamultiMeas = [];
+    this.dataPorNodo = {};
     
+    // Limpiar colas
+    this.wsNotificationQueue.clear();
+    
+    // Recargar solo datos esenciales con límite de 30 puntos
+    console.log('🔄 Recargando datos esenciales...');
+    this.cargarDatosTodosNodosDia();
+    
+    // Forzar garbage collection si está disponible
     if ((window as any).gc) {
       (window as any).gc();
+      console.log('🗑️ Garbage collection forzado');
+    }
+    
+    console.log('✅ Memoria liberada y datos recargados');
+    this.safeMarkForCheck();
+  }
+  
+  // Limpieza suave de memoria
+  private limpiarMemoriaSuave(): void {
+    // Solo limpiar si crece anormalmente, sin afectar datos de gráficos principales
+    if (this.datameas && this.datameas.length > 500) {
+      this.datameas = this.datameas.slice(-300);
+    }
+    
+    // NO aplicar muestreo a datameasTodosNodos - mantener datos completos del día
+    // Solo actualizar filtrados según visibilidad
+    if (this.datameasTodosNodos && this.datameasTodosNodos.length > 0) {
+      this.datameasTodosNodosFiltrados = this.datameasTodosNodos.filter(serie => {
+        const nodoKey = Object.keys(this.nodosVisibles).find(key => {
+          const nombreDescripcion: { [key: string]: string } = {
+            'T163': 'Negocio', 'T221': 'PanelSolarFondo', 'T77': 'CasaFondo',
+            'T26': 'CasaCentro', 'T72': 'PanelSolarNegocio'
+          };
+          return nombreDescripcion[key] === serie.name;
+        });
+        return nodoKey && this.nodosVisibles[nodoKey];
+      });
+    }
+    
+    if (this.datameasMes && this.datameasMes.length > 35) {
+      this.datameasMes = this.datameasMes.slice(-31);
+    }
+    
+    if (this.datamultiMeas && this.datamultiMeas.length > 100) {
+      this.datamultiMeas = this.datamultiMeas.slice(-100);
+    }
+    
+    if (this.dataPorNodo) {
+      Object.keys(this.dataPorNodo).forEach(nodo => {
+        if (this.dataPorNodo[nodo] && this.dataPorNodo[nodo].length > 500) {
+          this.dataPorNodo[nodo] = this.dataPorNodo[nodo].slice(-300);
+        }
+      });
+    }
+    
+    if (this.wsNotificationQueue.size > 5) {
+      this.wsNotificationQueue.clear();
     }
     
     this.safeMarkForCheck();
+  }
+  
+  // Método para aplicar muestreo inteligente
+  private aplicarMuestreo(datos: any[], targetSize: number): any[] {
+    if (!datos || datos.length <= targetSize) return datos;
+    
+    const resultado: any[] = [];
+    const step = datos.length / targetSize;
+    
+    for (let i = 0; i < targetSize; i++) {
+      resultado.push(datos[Math.floor(i * step)]);
+    }
+    
+    return resultado;
   }
   
   // ChangeDetection con throttle
@@ -777,18 +852,22 @@ export class EnergiaComponent implements OnDestroy {
   ngOnDestroy(): void {
     console.log('🧹 Limpiando componente...');
     
+    // Remover event listener de visibilidad
     if (this.visibilityChangeHandler) {
       document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
       this.visibilityChangeHandler = null;
     }
     
+    // Desconectar WebSocket y limpiar subscripciones
     this.disconnectWebSocket();
     
+    // Limpiar interval de limpieza
     if (this.memoryCleanupInterval) {
       clearInterval(this.memoryCleanupInterval);
       this.memoryCleanupInterval = null;
     }
     
+    // Limpiar todos los timeouts
     if (this.changeDetectionTimeout) {
       clearTimeout(this.changeDetectionTimeout);
       this.changeDetectionTimeout = null;
@@ -804,12 +883,25 @@ export class EnergiaComponent implements OnDestroy {
       this.wsProcessingTimer = null;
     }
     
+    // Limpiar cola de WebSocket
     this.wsNotificationQueue.clear();
     
+    // Limpiar arrays grandes para liberar memoria
+    this.datameas = [];
+    this.datameasTodosNodos = [];
+    this.datameasTodosNodosFiltrados = [];
+    this.datameasMes = [];
+    this.datamultiMeas = [];
+    this.dataPorNodo = {};
+    this.powerData = {};
+    this.fechameasData = {};
+    this.energiaDiaData = {};
+    
+    // Completar destroy$ para cancelar TODAS las subscripciones HTTP pendientes
     this.destroy$.next();
     this.destroy$.complete();
     
-    console.log('✅ Limpieza completada');
+    console.log('✅ Limpieza completada - memoria liberada');
   }
 
   // TrackBy function para optimizar el ngFor de los nodos
@@ -844,6 +936,12 @@ export class EnergiaComponent implements OnDestroy {
     if (percentage < 33) return '#00FF00'; // Verde
     if (percentage < 66) return '#FFA500'; // Naranja
     return '#FF0000'; // Rojo
+  }
+  
+  // Método simple para obtener color de fondo (HTML/CSS simple)
+  getGaugeColorSimple(nodo: string): string {
+    const color = this.getGaugeColor(nodo);
+    return `linear-gradient(135deg, ${color}22, ${color}88)`;
   }
 
   // Método para obtener el esquema de color completo para el gauge
